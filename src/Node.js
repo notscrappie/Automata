@@ -1,4 +1,4 @@
-const WebSocket = require("ws");
+const { WebSocket } = require("ws");
 const config = require("./config");
 const { fetch } = require("undici");
 
@@ -50,10 +50,10 @@ class Node {
     };
     if (this.resumeKey) headers["Resume-Key"] = this.resumeKey;
     this.ws = new WebSocket(this.url, { headers });
-    this.ws.on("open", this.#open.bind(this));
-    this.ws.on("error", this.#error.bind(this));
-    this.ws.on("message", this.#message.bind(this));
-    this.ws.on("close", this.#close.bind(this));
+    this.ws.on("open", this.open.bind(this));
+    this.ws.on("error", this.error.bind(this));
+    this.ws.on("message", this.message.bind(this));
+    this.ws.on("close", this.close.bind(this));
   }
 
   disconnect() {

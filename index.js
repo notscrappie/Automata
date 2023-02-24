@@ -1,7 +1,7 @@
 module.exports = {
   Node: require("./src/Node"),
   Player: require("./src/Player"),
-  Poru: require("./src/Poru"),
+  Manager: require("./src/Manager"),
   Spotify: require("./src/platform/Spotify"),
   Deezer: require("./src/platform/Deezer"),
   AppleMusic: require("./src/platform/AppleMusic"),

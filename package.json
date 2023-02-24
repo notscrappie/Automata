@@ -1,5 +1,5 @@
 {
-  "name": "poru",
+  "name": "@lust/automata",
   "version": "3.7.2",
   "description": "A stable and powerfull lavalink client around node.js",
   "main": "index.js",
@@ -18,8 +18,8 @@
   },
   "homepage": "https://github.com/parasop/poru#readme",
   "dependencies": {
-    "undici": "^5.11.0",
-    "ws": "^8.8.0"
+    "undici": "^5.20.0",
+    "ws": "^8.12.1"
   },
   "engines": {
     "node": ">=16.9.0"
@@ -37,6 +37,8 @@
     "eris"
   ],
   "devDependencies": {
-    "@types/node": "^18.7.18"
+    "@types/node": "^18.14.1",
+    "eslint": "^8.34.0",
+    "prettier": "^2.8.4"
   }
 }
