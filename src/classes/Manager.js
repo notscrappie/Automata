@@ -1,10 +1,9 @@
 const { EventEmitter } = require('events');
 const { fetch } = require('undici');
-const config = require('./config');
 const Player = require('./Player');
 const Node = require('./Node');
-const Response = require('./guild/Response');
-const { checkConnectionOptions } = require('./functions/checkConnectionOptions.js');
+const Response = require('./Response');
+const { checkConnectionOptions } = require('../functions/checkConnectionOptions.js');
 
 class Manager extends EventEmitter {
 	constructor(client, nodes, options = {}) {
@@ -20,7 +19,7 @@ class Manager extends EventEmitter {
 		this.isActive = false;
 		this.user = null;
 		this.options = options;
-		this.version = config.version;
+		this.version = 'v1';
 
 		this.sendData = null;
 	}
@@ -123,19 +122,16 @@ class Manager extends EventEmitter {
 	}
 
 	packetUpdate(packet) {
+		if (!['VOICE_STATE_UPDATE', 'VOICE_SERVER_UPDATE'].includes(packet.t))
+			return;
 		const player = this.players.get(packet.d.guild_id);
+		if (!player) return;
 
-		switch (packet.t) {
-		case 'VOICE_STATE_UPDATE':
-			if (!player || packet.d.user_id !== this.user) return;
+		if (packet.t === 'VOICE_SERVER_UPDATE')
 			player.connection.setServersUpdate(packet.d);
-			break;
-		case 'VOICE_SERVER_UPDATE':
-			if (!player) return;
-			player.connection.setServersUpdate(packet.d);
-			break;
-		default:
-			break;
+		if (packet.t === 'VOICE_STATE_UPDATE') {
+			if (packet.d.user_id !== this.user) return;
+			player.connection.setStateUpdate(packet.d);
 		}
 	}
 

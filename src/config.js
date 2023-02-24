@@ -25,7 +25,5 @@ module.exports = {
   Error: {
     sessionEndpoint: "[Poru Connection] Session endpoint missing. \n Kindly double check your client intents",
     noSessionID: "[Poru Connection] Session ID missing."
-
-
   }
 };
