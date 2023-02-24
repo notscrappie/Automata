@@ -24,7 +24,7 @@ class Player extends EventEmitter {
 		this.currentTrack = null;
 		this.previousTrack = null;
 
-		this.on('event', (data) => this.lavalinkEvent(data));
+		this.on('event', (data) => this.lavalinkEvent(data).bind(this)());
 		this.on('playerUpdate', ({ state: { connected, position, ping } }) => {
 			this.isConnected = connected;
 			this.position = position;
@@ -113,15 +113,18 @@ class Player extends EventEmitter {
    * @param {Number} volume - The new volume of the player.
    */
 	setVolume(volume) {
-		if (Number.isNaN(volume)) throw new RangeError('The provided volume number is not a number.');
-		if (volume < 1 && volume > 100) throw new RangeError('Volume must be between 1-100.');
+		volume = Number(volume);
 
-		volume = (volume / 100).toFixed(2);
+		if (Number.isNaN(volume)) throw new RangeError('The provided volume number is not a number.');
+		if (volume < 0 && volume > 100) throw new RangeError('Volume must be between 1-100.');
+
+		this.volume = Math.max(Math.min(volume, 500), 0);
+		const newVolume = this.volume;
 
 		this.node.send({
-			op: 'filters',
+			op: 'volume',
 			guildId: this.guildId,
-			volume,
+			volume: newVolume,
 		});
 
 		return this;
