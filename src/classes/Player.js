@@ -23,8 +23,8 @@ class Player extends EventEmitter {
 
 		this.on('event', (data) => this.lavalinkEvent(data));
 		this.on('playerUpdate', ({ state: { connected, position, ping } }) => {
-			this.isConnected = connected,
-			this.position = position,
+			this.isConnected = connected;
+			this.position = position;
 			this.ping = ping;
 		});
 

@@ -1,8 +1,4 @@
 class Queue extends Array {
-	constructor() {
-		super(...arguments);
-	}
-
 	get size() {
 		return this.length;
 	}

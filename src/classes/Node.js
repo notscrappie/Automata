@@ -76,7 +76,7 @@ class Node {
    * Destroys the player.
    */
 	destroy() {
-		const players = this.automata.players.filter((p) => p.node == this);
+		const players = this.automata.players.filter((p) => p.node === this);
 		players.forEach((p) => p.destroy());
 		this.disconnect();
 		this.automata.nodes.delete(this.host);
