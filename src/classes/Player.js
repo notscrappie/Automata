@@ -292,17 +292,17 @@ class Player extends EventEmitter {
 				this.isPlaying = false;
 			},
 
-			TrackStuckEvent() {
+			TrackStuckEvent: () => {
 				this.automata.emit('trackError', this, this.currentTrack, data);
 				this.stop();
 			},
 
-			TrackExceptionEvent() {
+			TrackExceptionEvent: () => {
 				this.automata.emit('trackError', this, this.track, data);
 				this.stop();
 			},
 
-			WebSocketClosedEvent() {
+			WebSocketClosedEvent: () => {
 				if ([4015, 4009].includes(data.code)) {
 					this.send({
 						guild_id: data.guildId,
@@ -314,7 +314,7 @@ class Player extends EventEmitter {
 				this.automata.emit('socketClosed', this, data);
 			},
 
-			default() {
+			default: () => {
 				throw new Error(`An unknown event: ${data}`);
 			},
 		};

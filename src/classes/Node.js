@@ -95,7 +95,7 @@ class Node {
 				);
 
 			this.isConnected = false;
-			this.ws.removeAllListeners();
+			this.ws?.removeAllListeners();
 			this.ws = null;
 			this.automata.emit('nodeReconnect', this);
 			this.connect();
