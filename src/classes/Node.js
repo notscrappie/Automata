@@ -175,8 +175,8 @@ class Node {
 		this.automata.emit('nodeError', this, event);
 	}
 
-	async getRoutePlannerStatus() {
-		return await this.makeRequest({
+	getRoutePlannerStatus() {
+		return this.makeRequest({
 			endpoint: '/routeplanner/status',
 			headers: {
 				Authorization: this.password,
@@ -185,8 +185,8 @@ class Node {
 		});
 	}
 
-	async unmarkFailedAddress(address) {
-		return await this.makeRequest({
+	unmarkFailedAddress(address) {
+		return this.makeRequest({
 			endpoint: '/routeplanner/free/address',
 			method: 'POST',
 			headers: {
