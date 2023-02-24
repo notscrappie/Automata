@@ -21,7 +21,7 @@ class AutomataTrack {
    	*/
 	async resolve(manager) {
 		const { author, title } = this.info;
-		const query = [author, title].filter((x) => !!x).join(' - ');
+		const query = [author, title].filter((x) => Boolean(x)).join(' - ');
 		const result = await manager.resolve(query, manager.options.defaultPlatform || 'dzsearch');
 
 		if (!result || !result.tracks.length) return;
