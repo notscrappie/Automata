@@ -18,11 +18,11 @@ export interface ResolveResponse {
   | "SEARCH_RESULT"
   | "NO_MATCHES"
   | "LOAD_FAILED";
-  tracks: Track[];
+  tracks: AutomataTrack[];
   playlistInfo: PlaylistInfo;
 }
 
-export class Track {
+export class AutomataTrack {
   constructor(data: string): this;
   track: string;
   info: {
@@ -40,11 +40,11 @@ export class Track {
   resolve: (manager: Automata) => Promise<ResolveResponse>;
 }
 
-export class Queue extends Array<Track> {
+export class Queue extends Array<AutomataTrack> {
   constructor(...args: any[]): this;
   get size(): number;
-  first: () => Track;
-  add: (track: Track) => Queue;
+  first: () => AutomataTrack;
+  add: (track: AutomataTrack) => Queue;
   remove: (index: number) => Queue;
   clear: () => Queue;
   shuffle: () => void;
@@ -124,7 +124,7 @@ interface AutomataEvents {
   nodeConnect: (node: Node) => void;
   nodeClose: (node: Node) => void;
   nodeError: (node: Node, event: any) => void;
-  trackStart: (player: Player, track: Track, payload: LavalinkEvents) => void;
+  trackStart: (player: Player, track: AutomataTrack, payload: LavalinkEvents) => void;
   playerUpdate: (
     player: Player,
     data: {
@@ -138,8 +138,8 @@ interface AutomataEvents {
       };
     }
   ) => void;
-  trackEnd: (player: Player, track: Track, payload: LavalinkEvents) => void;
-  trackError: (player: Player, track: Track, payload: LavalinkEvents) => void;
+  trackEnd: (player: Player, track: AutomataTrack, payload: LavalinkEvents) => void;
+  trackError: (player: Player, track: AutomataTrack, payload: LavalinkEvents) => void;
   socketClosed: (
     player: Player,
     data: {
@@ -151,7 +151,7 @@ interface AutomataEvents {
       byRemote: boolean;
     }
   ) => void;
-  queueEnd: (player: Player, track: Track, payload: LavalinkEvents) => void;
+  queueEnd: (player: Player, track: AutomataTrack, payload: LavalinkEvents) => void;
   playerCreate: (player: Player) => void;
   playerDestroy: (player: Player) => void;
   nodeDestroy: (node: Node) => void;
@@ -203,13 +203,13 @@ export class Automata extends EventEmitter {
     };
   }) => void;
   resolve: (query: string, source?: string) => Promise<ResolveResponse>;
-  fetchURL: (node: Node, track: Track) => Promise<ResolveResponse>;
+  fetchURL: (node: Node, track: AutomataTrack) => Promise<ResolveResponse>;
   fetchTrack: (
     node: Node,
     query: string,
     source?: string
   ) => Promise<ResolveResponse>;
-  decodeTrack: (track: Track) => Promise<Track>;
+  decodeTrack: (track: AutomataTrack) => Promise<AutomataTrack>;
   get: (identifier: string) => Player;
 }
 
@@ -248,8 +248,8 @@ export class Player extends EventEmitter {
   loop: PlayerLoopModes;
   position: number;
   ping: number;
-  currentTrack: Track | null;
-  previousTracks: Track;
+  currentTrack: AutomataTrack | null;
+  previousTracks: AutomataTrack;
   connection: voiceConnection
 
   play: (options?: { noReplace?: boolean }) => Promise<Player>;
