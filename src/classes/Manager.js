@@ -135,7 +135,7 @@ class Manager extends EventEmitter {
 		}
 	}
 
-	async resolve(query, source) {
+	resolve(query, source) {
 		const node = this.leastUsedNodes[0];
 		if (!node) throw new Error('No nodes are available.');
 		const regex = /^https?:\/\//;

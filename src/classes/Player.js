@@ -31,124 +31,129 @@ class Player extends EventEmitter {
 		this.automata.emit('playerCreate', this);
 	}
 
-	async play(options = {}) {
+	/**
+   * Sends a request to the server and plays the requested song.
+   * @param {Object} options - The options object.
+   */
+	play(options = {}) {
 		if (!this.queue.length) return;
 		this.currentTrack = this.queue.shift();
 
 		try {
-			if (!this.currentTrack.track) this.currentTrack = await this.currentTrack.resolve(this.poru);
+			const { track } = this.currentTrack ?? {};
+			if (!track) throw new TypeError('Invalid track.');
 			this.isPlaying = true;
 			this.position = 0;
 
 			this.node.send({
 				op: 'play',
 				guildId: this.guildId,
-				track: this.currentTrack.track,
-				noReplace: options.noReplace || true,
+				track,
+				noReplace: options.noReplace ?? true,
 			});
 
 			return this;
 		}
-		catch (e) {
-			this.poru.emit('trackError', this, this.currentTrack, null);
+		catch (_e) {
+			this.automata.emit('trackError', this, this.currentTrack, null);
 		}
 	}
 
-
+	/**
+   * Stops the player from playing.
+   */
 	stop() {
-		this.position = 0;
-		this.isPlaying = false;
 		this.node.send({
 			op: 'stop',
 			guildId: this.guildId,
 		});
-		return this;
 	}
 
+	/**
+   * Pauses the player.
+   * @param {boolean} pause
+   */
 	pause(pause = true) {
-		if (typeof pause !== 'boolean')
-			throw new RangeError('Pause function must be pass with boolean value.');
+		if (typeof pause !== 'boolean') throw new RangeError('pause must be a boolean.');
 
 		this.node.send({
 			op: 'pause',
 			guildId: this.guildId,
 			pause,
 		});
+
 		this.isPlaying = !pause;
 		this.isPaused = pause;
 
 		return this;
 	}
 
-	async seekTo(position) {
-		if (Number.isNaN(position)) throw new RangeError('[Poru Error] Position must be a number.');
+	/**
+   * Seeks the track.
+   * @param {Number} position - The new position.
+   */
+	seekTo(position) {
+		if (Number.isNaN(position)) throw new RangeError('\'position\' is not defined or not a number.');
 
-		this.position = position;
 		this.node.send({
 			op: 'seek',
 			guildId: this.guildId,
 			position,
 		});
+
 		return this;
 	}
 
+	/**
+   * Sets the volume of the player.
+   * @param {Number} volume - The new volume of the player.
+   */
 	setVolume(volume) {
-		// Player.setVolume(Number) Number should be in between 1 and 100
-		// currentVolume = Player.filters.volume*100
-		if (Number.isNaN(volume))
-			throw new RangeError('[Poru Error] Volume level must be a number.');
-
-		if (volume < 1 && volume > 100)
-			throw new RangeError('[Poru Error] Volume Number should be in between 1 and 100');
+		if (Number.isNaN(volume)) throw new RangeError('The provided volume number is not a number.');
+		if (volume < 1 && volume > 100) throw new RangeError('Volume must be between 1-100.');
 
 		volume = (volume / 100).toFixed(2);
-		this.filters.volume = volume;
-		this.filters.updateFilters();
+
+		this.node.send({
+			op: 'filters',
+			guildId: this.guildId,
+			volume,
+		});
 
 		return this;
 	}
 
+	/**
+   * Sets the current loop.
+   * @param {String} mode
+   */
 	setLoop(mode) {
-		if (!mode)
-			throw new Error(
-				'[Poru Player] You must have to provide loop mode as argument of setLoop',
-			);
+		const validModes = new Set(['NONE', 'TRACK', 'QUEUE']);
+		if (!validModes.has(mode)) throw new TypeError('setLoop only accepts NONE, TRACK and QUEUE as arguments.');
 
-		if (!['NONE', 'TRACK', 'QUEUE'].includes(mode))
-			throw new Error(
-				'[Poru Player] setLoop arguments are NONE,TRACK AND QUEUE',
-			);
-
-		switch (mode) {
-		case 'NONE': {
-			this.loop = 'NONE';
-			break;
-		}
-		case 'TRACK': {
-			this.loop = 'TRACK';
-			break;
-		}
-		case 'QUEUE': {
-			this.loop = 'QUEUE';
-			break;
-		}
-		}
-
+		this.loop = mode;
 		return this;
 	}
 
+	/**
+   * Sets the text channel where event messages (trackStart, trackEnd etc.) will be sent.
+   * @param {String} channel
+   */
 	setTextChannel(channel) {
-		if (typeof channel !== 'string')
-			throw new RangeError('Channel must be a string.');
+		if (typeof channel !== 'string') throw new TypeError('\'channel\' is not a string or is undefined.');
 		this.textChannel = channel;
 		return this;
 	}
+
+	/**
+   * Sets the text channel where event messages (trackStart, trackEnd etc.) will be sent.
+   * @param {String} channel
+   */
 	setVoiceChannel(channel) {
-		if (typeof channel !== 'string')
-			throw new RangeError('Channel must be a string.');
+		if (typeof channel !== 'string') throw new TypeError('\'channel\' is not a string or is undefined.');
 		if (!this.isConnected) return;
 		this.voiceChannel = channel;
-		this.poru.sendData({
+		this.automata.sendData({
 			op: 4,
 			d: {
 				guild_id: this.guildId,
@@ -157,33 +162,28 @@ class Player extends EventEmitter {
 				self_mute: false,
 			},
 		});
-		this.poru.emit(
-			'debug',
-			this.guildId,
-			`[Poru Player] Voice channel has been changed to ${channel}`,
-		);
 	}
 
-	connect(options = this) {
-		const { guildId, voiceChannel, deaf, mute } = options;
+	/**
+  * Connects the bot to the specified voice channel in the given guild.
+  * @param {Object} [options=this] - The options for the connection. Defaults to using the current object's properties.
+  */
+	connect({ guildId, voiceChannel, deaf = true, mute = false }) {
 		this.send({
 			guild_id: guildId,
 			channel_id: voiceChannel,
-			self_deaf: deaf || true,
-			self_mute: mute || false,
+			self_deaf: deaf ? true : false,
+			self_mute: mute,
 		}, true);
-
 		this.isConnected = true;
-		this.poru.emit(
-			'debug',
-			this.guildId,
-			'[Poru Player] Player has been connected',
-		);
 	}
 
-
+	/**
+  * Reconnects to the current voice channel.
+  */
 	reconnect() {
-		if (!this.voiceChannel) return;
+		if (!this.voiceChannel) return this;
+
 		this.send({
 			guild_id: this.guildId,
 			channel_id: this.voiceChannel,
@@ -194,20 +194,29 @@ class Player extends EventEmitter {
 		return this;
 	}
 
+	/**
+  *  Disconnects from the current voice channel.
+  */
 	disconnect() {
 		if (this.voiceChannel === null) return null;
+
 		this.pause(true);
 		this.isConnected = false;
+
 		this.send({
 			guild_id: this.guildId,
 			channel_id: null,
 			self_mute: false,
 			self_deaf: false,
 		});
+
 		this.voiceChannel = null;
 		return this;
 	}
 
+	/**
+   * Destroys the player.
+   */
 	destroy() {
 		this.disconnect();
 		this.node.send({
@@ -215,79 +224,80 @@ class Player extends EventEmitter {
 			guildId: this.guildId,
 		});
 
-		this.poru.emit('playerDestroy', this);
-		this.poru.emit(
-			'debug',
-			this.guildId,
-			'[Poru Player] destroyed the player',
-		);
-
-		this.poru.players.delete(this.guildId);
+		this.automata.emit('playerDestroy', this);
+		this.automata.players.delete(this.guildId);
 	}
 
+	/**
+   * Restarts the current track.
+   */
 	restart() {
-		this.filters.updateFilters();
-		if (this.currentTrack) {
-			this.isPlaying = true;
-			this.node.send({
-				op: 'play',
-				startTime: this.position,
-				noReplace: true,
-				guildId: this.guildId,
-				track: this.currentTrack.track,
-				pause: this.isPaused,
-			});
-		}
+		if (!this.currentTrack) return;
+		this.isPlaying = true;
+
+		this.node.send({
+			op: 'play',
+			startTime: this.position,
+			noReplace: true,
+			guildId: this.guildId,
+			track: this.currentTrack.track,
+			pause: this.isPaused,
+		});
 	}
 
+	/**
+   * Sends the data to the Lavalink node.
+   * @param {object} data - The data object that is being sent.
+   */
 	send(data) {
-		this.poru.sendData({ op: 4, d: data });
+		this.automata.sendData({ op: 4, d: data });
 	}
-
 
 	lavalinkEvent(data) {
 		const events = {
-			TrackStartEvent() {
+			TrackStartEvent: () => {
 				this.isPlaying = true;
 				this.isPaused = false;
-				this.poru.emit('trackStart', this, this.currentTrack, data);
+				this.automata.emit('trackStart', this, this.currentTrack, data);
 			},
 
-			TrackEndEvent() {
+			TrackEndEvent: () => {
 				this.previousTrack = this.currentTrack;
+				const playNext = true;
+				let emitEvent = true;
 
-				if (this.currentTrack && this.loop === 'TRACK') {
+				switch (this.loop) {
+				case 'TRACK':
 					this.queue.unshift(this.previousTrack);
-					this.poru.emit('trackEnd', this, this.currentTrack, data);
-					return this.play();
-				}
-				else if (this.currentTrack && this.loop === 'QUEUE') {
+					break;
+				case 'QUEUE':
 					this.queue.push(this.previousTrack);
-					this.poru.emit('trackEnd', this, this.currentTrack, data);
-
-					return this.play();
+					break;
+				default:
+					if (this.queue.length === 0) {
+						this.isPlaying = false;
+						this.automata.emit('queueEnd', this, this.track, data);
+						emitEvent = false;
+					}
+					break;
 				}
 
-				if (this.queue.length === 0) {
-					this.isPlaying = false;
-					return this.poru.emit('queueEnd', this, this.track, data);
-				}
-				else if (this.queue.length > 0) {
-					this.poru.emit('trackEnd', this, this.currentTrack, data);
-					return this.play();
-				}
+				if (emitEvent) this.automata.emit('trackEnd', this, this.currentTrack, data);
+				if (playNext && this.queue.length > 0) return this.play();
+
 				this.isPlaying = false;
-				this.poru.emit('queueEnd', this, this.currentTrack, data);
 			},
 
 			TrackStuckEvent() {
-				this.poru.emit('trackError', this, this.currentTrack, data);
+				this.automata.emit('trackError', this, this.currentTrack, data);
 				this.stop();
 			},
+
 			TrackExceptionEvent() {
-				this.poru.emit('trackError', this, this.track, data);
+				this.automata.emit('trackError', this, this.track, data);
 				this.stop();
 			},
+
 			WebSocketClosedEvent() {
 				if ([4015, 4009].includes(data.code)) {
 					this.send({
@@ -297,12 +307,14 @@ class Player extends EventEmitter {
 						self_deaf: this.options.deaf || false,
 					});
 				}
-				this.poru.emit('socketClosed', this, data);
+				this.automata.emit('socketClosed', this, data);
 			},
+
 			default() {
 				throw new Error(`An unknown event: ${data}`);
 			},
 		};
+
 		return events[data.type] || events.default;
 	}
 }
