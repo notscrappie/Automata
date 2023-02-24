@@ -66,8 +66,6 @@ class Node {
 	disconnect() {
 		if (!this.isConnected) return;
 
-		
-		
 		this.ws = null;
 		this.isConnected = false;
 	}
