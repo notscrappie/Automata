@@ -16,7 +16,7 @@ class Voice {
 
 		if (!endpoint) return automata.emit('error', 'Voice · The session endpoint is missing. Double check your client intents.');
 		this.voiceServer = data;
-		if (sessionId) return automata.emit('error', 'Voice · The session ID is missing.');
+		if (!sessionId) return automata.emit('error', 'Voice · The session ID is missing.');
 
 		this.region = endpoint?.split('.')[0]?.replace(/\d/g, '') ?? null;
 		node.send({ op: 'voiceUpdate', guildId, sessionId, event: data });

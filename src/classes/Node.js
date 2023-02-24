@@ -151,7 +151,7 @@ class Node {
 		}
 
 		if (guildId && this.automata.players.has(guildId)) {
-			const player = this.poru.players.get(packet.guildId);
+			const player = this.automata.players.get(packet.guildId);
 			player.emit(op, packet);
 		}
 

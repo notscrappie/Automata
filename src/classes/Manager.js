@@ -96,7 +96,7 @@ class Manager extends EventEmitter {
 		}
 	}
 
-	createConnection(options) {
+	create(options) {
 		checkConnectionOptions(options);
 		const player = this.players.get(options.guildId);
 		if (player) return player;

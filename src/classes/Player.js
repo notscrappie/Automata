@@ -165,16 +165,18 @@ class Player extends EventEmitter {
 	}
 
 	/**
-  * Connects the bot to the specified voice channel in the given guild.
-  * @param {Object} [options=this] - The options for the connection. Defaults to using the current object's properties.
-  */
-	connect({ guildId, voiceChannel, deaf = true, mute = false }) {
+	 * Connects the bot to the specified voice channel in the given guild.
+	 */
+	connect() {
+		const { guildId, voiceChannel, deaf, mute } = this.options;
+
 		this.send({
 			guild_id: guildId,
 			channel_id: voiceChannel,
-			self_deaf: deaf ? true : false,
+			self_deaf: deaf,
 			self_mute: mute,
-		}, true);
+		});
+
 		this.isConnected = true;
 	}
 
