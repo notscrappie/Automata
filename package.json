@@ -1,44 +1,24 @@
 {
-  "name": "@lust/automata",
-  "version": "3.7.2",
-  "description": "A stable and powerfull lavalink client around node.js",
+  "name": "@lustlabs/automata",
+  "version": "1.0.0",
+  "description": "An optimized version of the Poru Lavalink client developed by parasop.",
   "main": "src/index.js",
   "typings": "./typings/index.d.ts",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/parasop/poru.git"
-  },
-  "author": "PARAS",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/parasop/poru/issues"
-  },
-  "homepage": "https://github.com/parasop/poru#readme",
   "dependencies": {
     "undici": "^5.20.0",
     "ws": "^8.12.1"
   },
-  "engines": {
-    "node": ">=16.9.0"
-  },
-  "keywords": [
-    "music",
-    "lavalink",
-    "poru",
-    "bot",
-    "spotify",
-    "apple-music",
-    "soundcloud",
-    "deezer",
-    "discordjs",
-    "eris"
-  ],
   "devDependencies": {
     "@types/node": "^18.14.1",
     "eslint": "^8.34.0",
     "prettier": "^2.8.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lustlabs/automata.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.9.0"
   }
 }
