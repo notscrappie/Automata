@@ -21,13 +21,13 @@ class Manager extends EventEmitter {
 		this.user = null;
 		this.options = options;
 		this.version = config.version;
-		this.user = client.user.id;
 
 		this.sendData = null;
 	}
 
 	init(client) {
 		if (this.isActive) return this;
+		this.user = client.user.id;
 
 		this.sendData = (data) => {
 			const guild = client.guilds.cache.get(data.d.guild_id);

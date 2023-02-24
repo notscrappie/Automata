@@ -37,7 +37,7 @@ export class Track {
     requester?: object | string | null;
     image: string | null;
   };
-  resolve: (manager: Poru) => Promise<ResolveResponse>;
+  resolve: (manager: Automata) => Promise<ResolveResponse>;
 }
 
 export class Queue extends Array<Track> {
@@ -66,8 +66,7 @@ export interface FiltersOptions {
   distortion?: boolean;
   channelMix?: boolean;
   lowPass?: boolean;
-}
-
+};
 
 export interface NodeStats {
   players: number;
@@ -94,43 +93,32 @@ export interface NodeOptions {
   secure?: boolean;
 }
 
-export interface PoruOptions {
+export interface AutomataOptions {
   defaultPlatform?: string;
-  library?: string,
   reconnectTimeout?: number;
   reconnectTries?: number;
   resumeKey?: string;
   resumeTimeout?: number;
-  playlistLimit?: number;
-  albumLimit?: number;
-  artistLimit?: number;
-  searchMarket?: string;
-}
-
+};
 
 export class voiceConnection {
-
   constructor(player: Player): this;
-
   player: Player;
   sessionId: string | null;;
   region = string | null;
   muted = boolean | false;
   deafened = boolean | false;
   voiceServer = IvoiceServer | null;
-
-}
-
-
+};
 
 export class Node implements INode {
-  constructor(manager: Poru, options: NodeOptions, node: PoruOptions): this;
+  constructor(manager: Automata, options: NodeOptions, node: AutomataOptions): this;
   name: string | null;
   host: string;
   port: number;
   password: string;
   secure: boolean;
-  manager: Poru;
+  manager: Automata;
   url: string;
   reconnectTimeout: number;
   reconnectTries: number;
@@ -188,12 +176,12 @@ interface PoruEvents {
   nodeReconnect: (node: Node) => void;
 }
 
-export class Poru extends EventEmitter {
-  constructor(client: any, nodes: NodeOptions[], options?: PoruOptions): this;
-  on<U extends keyof PoruEvents>(event: U, listener: PoruEvents[U]): this;
-  emit<U extends keyof PoruEvents>(
+export class Automata extends EventEmitter {
+  constructor(client: any, nodes: NodeOptions[], options?: AutomataOptions): this;
+  on<U extends keyof AutomataEvents>(event: U, listener: AutomataEvents[U]): this;
+  emit<U extends keyof AutomataEvents>(
     event: U,
-    ...args: Parameters<PoruEvents[U]>
+    ...args: Parameters<AutomataEvents[U]>
   ): boolean;
 
   client: any;
@@ -202,7 +190,7 @@ export class Poru extends EventEmitter {
   players: Map<string, Player>;
   isActive: boolean;
   user: string | null;
-  options: PoruOptions;
+  options: AutomataOptions;
   sendData: null;
   version: string;
   spotify: any;
@@ -264,8 +252,8 @@ export interface PlayerOptions {
 }
 
 export class Player extends EventEmitter {
-  constructor(manager: Poru, node: Node, options: PlayerOptions): this;
-  manager: Poru;
+  constructor(manager: Automata, node: Node, options: PlayerOptions): this;
+  manager: Automata;
   queue: Queue;
   node: Node;
   options: PlayerOptions;
@@ -305,7 +293,6 @@ export class Player extends EventEmitter {
   send: (payload: any) => void;
   lavalinkEvent: (data: LavalinkEvents) => void;
 }
-
 
 export class Filters {
   constructor(player: Player, options: FiltersOptions): this;
