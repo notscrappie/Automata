@@ -4,5 +4,5 @@ module.exports = {
 	Manager: require('./classes/Manager'),
 	Queue: require('./classes/Queue'),
 	Track: require('./classes/Track'),
-	AutomataTrack: require('./classes/PoruTrack'),
+	AutomataTrack: require('./classes/AutomataTrack'),
 };
