@@ -66,8 +66,8 @@ class Node {
 	disconnect() {
 		if (!this.isConnected) return;
 
-		this.ws?.removeAllListeners() ?? null;
-		this.ws?.close() ?? null;
+		
+		
 		this.ws = null;
 		this.isConnected = false;
 	}
