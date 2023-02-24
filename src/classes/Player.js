@@ -12,6 +12,9 @@ class Player extends EventEmitter {
 		this.guildId = options.guildId;
 		this.voiceChannel = options.voiceChannel;
 		this.textChannel = options.textChannel ?? null;
+		this.selfDeafen = options.selfDeafen ?? true;
+		this.selfMute = options.selfMute ?? false;
+		this.volume = 100;
 		this.isConnected = false;
 		this.isPlaying = false;
 		this.isPaused = false;
@@ -27,6 +30,7 @@ class Player extends EventEmitter {
 			this.position = position;
 			this.ping = ping;
 		});
+		this.setVolume(this.volume);
 
 		this.automata.emit('playerCreate', this);
 	}
@@ -158,8 +162,8 @@ class Player extends EventEmitter {
 			d: {
 				guild_id: this.guildId,
 				channel_id: this.voiceChannel,
-				self_deaf: true,
-				self_mute: false,
+				self_deaf: this.selfDeafen,
+				self_mute: this.selfMute,
 			},
 		});
 	}
@@ -168,13 +172,11 @@ class Player extends EventEmitter {
 	 * Connects the bot to the specified voice channel in the given guild.
 	 */
 	connect() {
-		const { guildId, voiceChannel, deaf, mute } = this.options;
-
 		this.send({
-			guild_id: guildId,
-			channel_id: voiceChannel,
-			self_deaf: deaf,
-			self_mute: mute,
+			guild_id: this.guildId,
+			channel_id: this.voiceChannel,
+			self_deaf: this.selfDeafen,
+			self_mute: this.selfMute,
 		});
 
 		this.isConnected = true;
@@ -189,8 +191,8 @@ class Player extends EventEmitter {
 		this.send({
 			guild_id: this.guildId,
 			channel_id: this.voiceChannel,
-			self_mute: false,
-			self_deaf: false,
+			self_mute: this.selfMute,
+			self_deaf: this.selfDeafen,
 		});
 
 		return this;
@@ -208,8 +210,8 @@ class Player extends EventEmitter {
 		this.send({
 			guild_id: this.guildId,
 			channel_id: null,
-			self_mute: false,
-			self_deaf: false,
+			self_mute: this.selfMute,
+			self_deaf: this.selfDeafen,
 		});
 
 		this.voiceChannel = null;
@@ -305,8 +307,8 @@ class Player extends EventEmitter {
 					this.send({
 						guild_id: data.guildId,
 						channel_id: this.voiceChannel,
-						self_mute: this.options.mute || false,
-						self_deaf: this.options.deaf || false,
+						self_mute: this.options.selfMute || false,
+						self_deaf: this.options.selfDeaf || false,
 					});
 				}
 				this.automata.emit('socketClosed', this, data);
