@@ -1,159 +1,93 @@
 <p align="center">
-  <img src="https://cdn.discordapp.com/attachments/732987654165233744/987656504373026816/20220618_000923_0000.png" />
-</p>
-<p align="center">
-
-[![Discord](https://img.shields.io/discord/567705326774779944?style=flat-square)](https://discord.gg/Zmmc47Nrh8)
-[![npm](https://img.shields.io/npm/v/poru?style=flat-square)](https://www.npmjs.com/package/poru)
-![Github Stars](https://img.shields.io/github/stars/parasop/poru?style=flat-square)
-![GitHub issues](https://img.shields.io/github/issues-raw/parasop/poru?style=flat-square)
-![Snyk Vulnerabilities for npm package](https://img.shields.io/snyk/vulnerabilities/npm/poru?style=flat-square)
-![NPM](https://img.shields.io/npm/l/poru?style=flat-square)
-
+  <img src="https://i.imgur.com/GTPBh5x.png" />
 </p>
 
-<p align="center">
-  <a href="https://nodei.co/npm/poru/"><img src="https://nodei.co/npm/poru.png?downloads=true&downloadRank=true&stars=true"></a>
-</p>
+# What's this and how is it different from Poru?
+Automata is a fork of the Poru lavalink client developed and maintained by [parasop](https://github.com/parasop). This fork contains tweaks to certain functions and modified functionality such as the de-coupling from YouTube entirely with this fork only being able to play audio from platforms such as Deezer, SoundCloud, Spotify etc and some performance related optimizations.
 
-## Table of contents
+The old v1 branch is based on Poru 3.7.2. This branch is based on Poru v4 with full support for Lavalink's new REST API.
 
-- [Documentation](https://poru.parasdocs.tech)
-- [Installation](#installation)
-- [About](#about)
-- [Example](https://github.com/parasop/poru-example)
-
-# Installation
-
+# Installation (if you're crazy enough)
 ```
-// Using npm
-npm install poru
-
-// Using yarn
-yarn add poru
+npm install github:shadowrunners/Automata
 ```
 
-# About
-
-To use you need a configured [Lavalink](https://github.com/freyacodes/Lavalink) instance.
-
-- Stable client
-- support typescript
-- 100% Compatible with Lavalink
-- Object-oriented
-- 100% Customizable
-- Easy to setup
-- Inbuilt Queue System
-- Inbuilt support for spotify,apple music and deezer
-## Implementation
-
-[Poru Music](https://github.com/parasop/poru-example) **Example bot as guide for beginning.**
-
-
-## Implementation Repo:
-Note : Send pr to add your repo here
-
-URL | Features  | Additional Information
--------|----------|-----------------
-[Poru Music](https://github.com/parasop/poru-example) | Basic example | works with latest djs version
-
-
-
-
-
-
-
-
-
-
-## Example usage basic bot
+## Example
 
 ```javascript
 const { Client, GatewayIntentBits } = require("discord.js");
-const { Poru } = require("poru");
-const nodes = [
-  {
-    name: "main_node",
-    host: "localhost",
-    port: 8080,
-    password: "iloveyou3000",
-  },
-];
-const PoruOptions = {
-  reconnectTime: 0,
-  resumeKey: "MyPlayers",
-  resumeTimeout: 60,
-  defaultPlatform: "ytsearch",
-};
+const { Manager } = require("@shadowrunners/automata");
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildVoiceStates,
-    GatewayIntentBits.MessageContent,
   ],
 });
-client.poru = new Poru(client, nodes, PoruOptions);
 
-client.poru.on("trackStart", (player, track) => {
+client.manager = new Manager(
+  client, 
+  {
+    name: "main_node",
+    host: "localhost",
+    port: 8080,
+    password: "iloveyou3000",
+  }, 
+  {
+    reconnectTime: 0,
+    resumeKey: "MyPlayers",
+    resumeTimeout: 60,
+    defaultPlatform: "dzsearch",
+  }
+);
+
+client.manager.on("trackStart", (player, track) => {
   const channel = client.channels.cache.get(player.textChannel);
   return channel.send(`Now playing \`${track.title}\``);
 });
 
 client.on("ready", () => {
   console.log("Ready!");
-  client.poru.init(client);
+  client.manager.init(client);
 });
 
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
-  if (!interaction.member.voice.channel)
-    return interaction.reply({
-      content: `Please connect with voice channel `,
-      ephemeral: true,
-    });
+  
+  const { options, member, guild, channelId } = interaction;
+  
+  interaction.deferReply();
+  
+  if (!member.voice.channel) return interaction.editReply({ embeds: [embed.setDescription('🔹 | You need to be in a voice channel to use this command.')] });
 
-  const track = interaction.options.getString("track");
-
-  const res = await client.poru.resolve(track);
-
-  if (res.loadType === "LOAD_FAILED") {
-    return interaction.reply("Failed to load track.");
-  } else if (res.loadType === "NO_MATCHES") {
-    return interaction.reply("No source found!");
-  }
-
-  //create connection with discord voice channnel
-  const player = client.poru.createConnection({
-    guildId: interaction.guild.id,
-    voiceChannel: interaction.member.voice.channelId,
-    textChannel: interaction.channel.id,
-    selfDeaf: true,
+  const query = options.getString("query");
+  const res = await client.manager.resolve({ query, requester: member });
+  
+  const player = client.manager.create({
+    guildId: guild.id,
+    voiceChannel: member.voice.channelId,
+    textChannel: channelId,
+    deaf: true,
   });
+  
+  switch (res.loadType) {
+    case 'LOAD_FAILED': return interaction.editReply({ content: "Failed to load track." });
+    case 'NO_MATCHES': return interaction.editReply({ content: "No results found." });
+    case 'PLAYLIST_LOADED': {
+      for (const track of res.tracks) player.queue.add(track);
 
-  if (res.loadType === "PLAYLIST_LOADED") {
-    for (const track of res.tracks) {
-      track.info.requester = interaction.user;
-      player.queue.add(track);
-    }
-
-    interaction.reply(
-      `${res.playlistInfo.name} has been loaded with ${res.tracks.length}`
-    );
-  } else {
-    const track = res.tracks[0];
-    track.info.requester = interaction.user;
-    player.queue.add(track);
-    interacton.reply(`Queued Track \n \`${track.title}\``);
+      interaction.editReply({ content: `${res.playlistInfo.name} has been loaded with ${res.tracks.length}` });
+    case 'SEARCH_RESULT':
+    case 'TRACK_LOADED':
+      player.queue.add(res.tracks[0]);
+      if (!player.isPlaying && player.isConnected) player.play();
+      interacton.editReply(`Enqueued track: \n \`${track.title}\``);
   }
-
-  if (!player.isPlaying && player.isConnected) player.play();
 });
 
-client.login("TOKEN");
+client.login('wee woo discord token goes here');
 ```
 
-## Need Help?
-
-Feel free to join our [discord server](https://discord.gg/Zmmc47Nrh8), Give us suggestions and advice about errors and new features.
-with ❤️ by [Paras](https://github.com/parasop) .
+## Credits
+Full credit goes to [parasop](https://github.com/parasop) for creating Poru.
