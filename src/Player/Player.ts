@@ -227,19 +227,13 @@ export class Player extends EventEmitter {
   public moveNode(name: string) {
     const node = this.automata.nodes.get(name);
     if (!node || node.name === this.node.name) return;
-    if (!node.isConnected) throw new Error("The node provided is not");
+    if (!node.isConnected) throw new Error("The node provided is not available.");
 
-    try {
-      this.node.rest.destroyPlayer(this.guildId);
-      this.automata.players.delete(this.guildId);
-      this.node = node;
-      this.automata.players.set(this.guildId, this);
-      this.restart();
-    } catch (e) {
-      throw e;
-    }
-
-    this.destroy();
+    this.node.rest.destroyPlayer(this.guildId);
+    this.automata.players.delete(this.guildId);
+    this.node = node;
+    this.automata.players.set(this.guildId, this);
+    this.restart();
   }
 
   /** Automatically moves the node. */
