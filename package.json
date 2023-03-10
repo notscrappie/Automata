@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "build": "tsc && npm run build:esm && npm run build:docs",
+    "build": "tsc && npm run build:esm",
     "build:esm": "gen-esm-wrapper dist/index.js dist/index.mjs"
   },
   "repository": {
