@@ -183,7 +183,7 @@ class Node {
         return await this.rest.get(`/v3/routeplanner/status`);
     }
     /** Removes a failed address from the route planner's blacklist. */
-    async unmarkFailedAddress(address) {
+    unmarkFailedAddress(address) {
         return this.rest.post(`/v3/routeplanner/free/address`, { address });
     }
 }

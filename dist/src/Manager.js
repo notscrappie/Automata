@@ -112,6 +112,8 @@ class Manager extends events_1.EventEmitter {
                 if (player.isPaused)
                     player.pause(false);
                 break;
+            default:
+                break;
         }
     }
     /** Creates a new player using the node and options provided by the create() function. */

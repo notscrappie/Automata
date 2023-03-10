@@ -203,7 +203,7 @@ class Player extends events_1.EventEmitter {
         this.restart();
     }
     /** Automatically moves the node. */
-    async AutoMoveNode() {
+    AutoMoveNode() {
         const [node] = this.automata.leastUsedNodes;
         if (!node)
             throw new Error("There aren't any available nodes.");

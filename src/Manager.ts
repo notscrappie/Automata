@@ -119,6 +119,8 @@ export class Manager extends EventEmitter {
         player.connection.setStateUpdate(packet.d);
         if (player.isPaused) player.pause(false);
         break;
+      default:
+        break;
     }
   }
 

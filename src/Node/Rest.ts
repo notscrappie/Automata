@@ -70,7 +70,8 @@ export class Rest {
       return null;
     }
   };
-/* Sends a POST request to the specified endpoint and returns the response data. */
+
+  /* Sends a POST request to the specified endpoint and returns the response data. */
   public async post(endpoint: RouteLike, body: any) {
     try {
       const req = await fetch(this.url + endpoint, {

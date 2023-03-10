@@ -62,7 +62,7 @@ export declare class Player extends EventEmitter {
     /** Moves the player to another node. */
     moveNode(name: string): void;
     /** Automatically moves the node. */
-    AutoMoveNode(): Promise<void>;
+    AutoMoveNode(): void;
     /** Handles lavalink related events. */
     eventHandler(data: any): boolean | Promise<void>;
     /** Resolves the provided query. */

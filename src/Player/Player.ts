@@ -236,7 +236,7 @@ export class Player extends EventEmitter {
   }
 
   /** Automatically moves the node. */
-  public async AutoMoveNode(): Promise<void> {
+  public AutoMoveNode() {
     const [node] = this.automata.leastUsedNodes;
     if (!node) throw new Error("There aren't any available nodes.");
     if(!this.automata.nodes.has(node.name)) return this.destroy();

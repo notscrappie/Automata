@@ -125,7 +125,7 @@ export class Node {
 
     penalties += players;
     penalties += Math.round(Math.pow(1.05, 100 * cpu.systemLoad) * 10 - 10);
-    
+
     if (this.stats.frameStats) {
       penalties += frameStats.deficit;
       penalties += frameStats.nulled * 2;
@@ -199,7 +199,7 @@ export class Node {
   }
 
   /** Removes a failed address from the route planner's blacklist. */
-  public async unmarkFailedAddress(address: string): Promise<any> {
+  public unmarkFailedAddress(address: string): Promise<any> {
     return this.rest.post(`/v3/routeplanner/free/address`, { address })
   }
 }
