@@ -65,12 +65,9 @@ export class Manager extends EventEmitter {
 
   /** Gets the least used nodes. */
   get leastUsedNodes() {
-    const nodes = [];
-    for (const node of this.nodes.values()) {
-      if (node.isConnected) nodes.push(node);
-    }
-    nodes.sort((a, b) => a.penalties - b.penalties);
-    return nodes;
+    return [...this.nodes.values()]
+    .filter((node) => node.isConnected)
+    .sort((a, b) => a.penalties - b.penalties);
   }
 
   /** Retrives a node. */
@@ -120,6 +117,7 @@ export class Manager extends EventEmitter {
       case "VOICE_STATE_UPDATE":
         if (packet.d.user_id !== this.userId) return;
         player.connection.setStateUpdate(packet.d);
+        if (player.isPaused) player.pause(false);
         break;
     }
   }
@@ -138,20 +136,21 @@ export class Manager extends EventEmitter {
   }
 
   /** Resolves the provided query. */
-  async resolve({ query, source, requester }: ResolveOptions, node?: Node) {
-    const targetNode = node ?? this.leastUsedNodes[0];
-		const { protocol } = new URL(query);
-		const track = protocol === 'http:' || protocol === 'https:'
-				? query : `${source || 'dzsearch'}:${query}`;
-		const response = await targetNode.rest.get(
-			`/v3/loadtracks?identifier=${encodeURIComponent(track)}`,
-		);
+  async resolve({ query, source, requester }: ResolveOptions, node?: Node): Promise<Response> {
+    if (!this.isActivated) throw new Error('Automata has not been initialized. Initiate Automata using the <Manager>.init() function in your ready.js.');
 
-		return new Response(response, requester);
+    node = node ?? this.leastUsedNodes?.[0];
+    if (!node) throw Error('There are no available nodes.')
+
+    const regex = /^https?:\/\//;
+    const identifier = regex.test(query) ? query : `${source ?? "dzsearch"}:${query}`;
+
+		const response = await node.rest.get(`/v3/loadtracks?identifier=${encodeURIComponent(identifier)}`);
+    return new Response(response, requester);
   }
 
   /** Sends a GET request to the Lavalink node to decode the provided track. */
-  async decodeTrack(track: string, node?: Node) {
+  decodeTrack(track: string, node?: Node) {
     const targetNode = node ?? this.leastUsedNodes[0];
     return targetNode.rest.get(
       `/v3/decodetrack?encodedTrack=${encodeURIComponent(track)}`

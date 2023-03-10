@@ -7,7 +7,6 @@ import Queue from "../guild/Queue";
 import { EventEmitter } from "events";
 import { Filters } from "./Filters";
 import { Response } from "../guild/Response";
-type Loop = "NONE" | "TRACK" | "QUEUE";
 export declare class Player extends EventEmitter {
     readonly data: Record<string, unknown>;
     automata: Manager;
@@ -38,7 +37,7 @@ export declare class Player extends EventEmitter {
     /** Stops the player from playing. */
     stop(): this;
     /** Pauses the player. */
-    pause(toggle?: boolean): this;
+    pause(toggle: boolean): this;
     /** Seeks the track. */
     seekTo(position: number): void;
     /** Sets the volume of the player. */
@@ -71,4 +70,4 @@ export declare class Player extends EventEmitter {
     /** Sends the data to the Lavalink node the old fashioned way. */
     send(data: object): void;
 }
-export {};
+export type Loop = "NONE" | "TRACK" | "QUEUE";

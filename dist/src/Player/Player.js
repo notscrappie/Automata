@@ -100,7 +100,7 @@ class Player extends events_1.EventEmitter {
         return this;
     }
     /** Pauses the player. */
-    pause(toggle = true) {
+    pause(toggle) {
         this.node.rest.updatePlayer({
             guildId: this.guildId,
             data: { paused: toggle },
@@ -195,18 +195,12 @@ class Player extends events_1.EventEmitter {
         if (!node || node.name === this.node.name)
             return;
         if (!node.isConnected)
-            throw new Error("The node provided is not");
-        try {
-            this.node.rest.destroyPlayer(this.guildId);
-            this.automata.players.delete(this.guildId);
-            this.node = node;
-            this.automata.players.set(this.guildId, this);
-            this.restart();
-        }
-        catch (e) {
-            throw e;
-        }
-        this.destroy();
+            throw new Error("The node provided is not available.");
+        this.node.rest.destroyPlayer(this.guildId);
+        this.automata.players.delete(this.guildId);
+        this.node = node;
+        this.automata.players.set(this.guildId, this);
+        this.restart();
     }
     /** Automatically moves the node. */
     async AutoMoveNode() {
@@ -279,11 +273,13 @@ class Player extends events_1.EventEmitter {
     }
     /** Resolves the provided query. */
     async resolve({ query, source, requester }) {
-        const url = new URL(query);
-        const track = url.protocol === 'http:' || url.protocol === 'https:'
-            ? query
-            : `${source || 'dzsearch'}:${query}`;
-        const response = await this.node.rest.get(`/v3/loadtracks?identifier=${encodeURIComponent(track)}`);
+        const regex = /^https?:\/\//;
+        let url;
+        if (regex.test(query))
+            url = `/v3/loadtracks?identifier=${encodeURIComponent(query)}`;
+        else
+            url = `/v3/loadtracks?identifier=${encodeURIComponent(`${source || "dzsearch"}:${query}`)}`;
+        const response = await this.node.rest.get(url);
         return new Response_1.Response(response, requester);
     }
     /** Sends the data to the Lavalink node the old fashioned way. */

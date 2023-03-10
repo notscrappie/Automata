@@ -22,9 +22,9 @@ export declare class Manager extends EventEmitter {
     /** Removes a node from the node pool. */
     removeNode(identifier: string): void;
     /** Gets the least used nodes. */
-    get leastUsedNodes(): any[];
+    get leastUsedNodes(): Node[];
     /** Retrives a node. */
-    getNode(identifier?: string): any[] | Node;
+    getNode(identifier?: string): Node | Node[];
     /** Creates a new player instance for the specified guild, and connects to the least used node based on the provided region or overall system load. */
     create(options: ConnectionOptions): Player;
     /** Sends packet updates. */
@@ -36,9 +36,9 @@ export declare class Manager extends EventEmitter {
     /** Resolves the provided query. */
     resolve({ query, source, requester }: ResolveOptions, node?: Node): Promise<Response>;
     /** Sends a GET request to the Lavalink node to decode the provided track. */
-    decodeTrack(track: string, node?: Node): Promise<any>;
+    decodeTrack(track: string, node?: Node): Promise<unknown>;
     /** Sends a POST request to the Lavalink node to decode the provided tracks. */
-    decodeTracks(tracks: string[], node?: Node): Promise<any>;
+    decodeTracks(tracks: string[], node?: Node): Promise<unknown>;
     /** Sends a GET request to the Lavalink node to get information regarding the node. */
     getLavalinkInfo(name: string): Promise<unknown>;
     /** Sends a GET request to the Lavalink node to get information regarding the status of the node. */

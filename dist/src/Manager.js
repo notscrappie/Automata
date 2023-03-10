@@ -58,13 +58,9 @@ class Manager extends events_1.EventEmitter {
     }
     /** Gets the least used nodes. */
     get leastUsedNodes() {
-        const nodes = [];
-        for (const node of this.nodes.values()) {
-            if (node.isConnected)
-                nodes.push(node);
-        }
-        nodes.sort((a, b) => a.penalties - b.penalties);
-        return nodes;
+        return [...this.nodes.values()]
+            .filter((node) => node.isConnected)
+            .sort((a, b) => a.penalties - b.penalties);
     }
     /** Retrives a node. */
     getNode(identifier = "auto") {
@@ -113,6 +109,8 @@ class Manager extends events_1.EventEmitter {
                 if (packet.d.user_id !== this.userId)
                     return;
                 player.connection.setStateUpdate(packet.d);
+                if (player.isPaused)
+                    player.pause(false);
                 break;
         }
     }
@@ -129,15 +127,18 @@ class Manager extends events_1.EventEmitter {
     }
     /** Resolves the provided query. */
     async resolve({ query, source, requester }, node) {
-        const targetNode = node ?? this.leastUsedNodes[0];
-        const { protocol } = new URL(query);
-        const track = protocol === 'http:' || protocol === 'https:'
-            ? query : `${source || 'dzsearch'}:${query}`;
-        const response = await targetNode.rest.get(`/v3/loadtracks?identifier=${encodeURIComponent(track)}`);
+        if (!this.isActivated)
+            throw new Error('Automata has not been initialized. Initiate Automata using the <Manager>.init() function in your ready.js.');
+        node = node ?? this.leastUsedNodes?.[0];
+        if (!node)
+            throw Error('There are no available nodes.');
+        const regex = /^https?:\/\//;
+        const identifier = regex.test(query) ? query : `${source ?? "dzsearch"}:${query}`;
+        const response = await node.rest.get(`/v3/loadtracks?identifier=${encodeURIComponent(identifier)}`);
         return new Response_1.Response(response, requester);
     }
     /** Sends a GET request to the Lavalink node to decode the provided track. */
-    async decodeTrack(track, node) {
+    decodeTrack(track, node) {
         const targetNode = node ?? this.leastUsedNodes[0];
         return targetNode.rest.get(`/v3/decodetrack?encodedTrack=${encodeURIComponent(track)}`);
     }

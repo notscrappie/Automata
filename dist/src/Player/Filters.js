@@ -5,37 +5,158 @@ class Filters {
     player;
     volume;
     equalizer;
-    karaoke;
-    tremolo;
     vibrato;
     rotation;
-    distortion;
-    channelMix;
-    lowPass;
     timescale;
+    karaoke;
     constructor(player) {
         this.player = player;
-        (this.volume = 1.0),
-            (this.equalizer = []);
-        this.karaoke = null;
+        this.volume = 1.0;
+        this.equalizer = [];
         this.timescale = null;
-        this.tremolo = null;
         this.vibrato = null;
         this.rotation = null;
-        this.distortion = null;
-        this.channelMix = null;
-        this.lowPass = null;
+        this.karaoke = null;
     }
+    /** Sets the equalizer bands and updates the filters. */
     setEqualizer(bands) {
         this.equalizer = bands;
         this.updateFilters();
         return this;
     }
-    /**
-        * Change the karaoke Options applied to the currently playing track
-        * @param karaoke An object that conforms to the KaraokeOptions type that defines a range of frequencies to mute
-        * @returns The current filter instance
-        */
+    /** Applies the bass boost filter. */
+    bassBoost() {
+        const { setEqualizer } = this;
+        const equalizer = [
+            { bands: 0, gain: 0.65 },
+            { bands: 1, gain: 0.45 },
+            { bands: 2, gain: -0.45 },
+            { bands: 3, gain: -0.65 },
+            { bands: 4, gain: -0.35 },
+            { bands: 5, gain: 0.45 },
+            { bands: 6, gain: 0.55 },
+            { bands: 7, gain: 0.6 },
+            { bands: 8, gain: 0.6 },
+            { bands: 9, gain: 0.6 },
+            { bands: 10, gain: 0 },
+            { bands: 11, gain: 0 },
+            { bands: 12, gain: 0 },
+            { bands: 13, gain: 0 },
+        ];
+        setEqualizer(equalizer);
+        return this;
+    }
+    /** Applies the nightcore filter. */
+    nightcore() {
+        const { setTimescale } = this;
+        const timescale = {
+            speed: 1.1,
+            pitch: 1.125,
+            rate: 1.05,
+        };
+        setTimescale(timescale);
+        return this;
+    }
+    /** Applies the slow motion filter. */
+    slowmo() {
+        const { setTimescale } = this;
+        const timescale = {
+            speed: 0.5,
+            pitch: 1.0,
+            rate: 0.8,
+        };
+        setTimescale(timescale);
+        return this;
+    }
+    /** Applies the soft filter. */
+    soft() {
+        const { setEqualizer } = this;
+        const equalizer = [
+            { bands: 0, gain: 0 },
+            { bands: 1, gain: 0 },
+            { bands: 2, gain: 0 },
+            { bands: 3, gain: 0 },
+            { bands: 4, gain: 0 },
+            { bands: 5, gain: 0 },
+            { bands: 6, gain: 0 },
+            { bands: 7, gain: 0 },
+            { bands: 8, gain: -0.25 },
+            { bands: 9, gain: -0.25 },
+            { bands: 10, gain: -0.25 },
+            { bands: 11, gain: -0.25 },
+            { bands: 12, gain: -0.25 },
+            { bands: 13, gain: -0.25 },
+        ];
+        setEqualizer(equalizer);
+        return this;
+    }
+    /** Applies the tv filter. */
+    tv() {
+        const { setEqualizer } = this;
+        const equalizer = [
+            { bands: 0, gain: 0 },
+            { bands: 1, gain: 0 },
+            { bands: 2, gain: 0 },
+            { bands: 3, gain: 0 },
+            { bands: 4, gain: 0 },
+            { bands: 5, gain: 0 },
+            { bands: 6, gain: 0 },
+            { bands: 7, gain: 0.65 },
+            { bands: 8, gain: 0.65 },
+            { bands: 9, gain: 0.65 },
+            { bands: 10, gain: 0.65 },
+            { bands: 11, gain: 0.65 },
+            { bands: 12, gain: 0.65 },
+            { bands: 13, gain: 0.65 },
+        ];
+        setEqualizer(equalizer);
+        return this;
+    }
+    /** Applies the treble bass filter. */
+    trebleBass() {
+        const { setEqualizer } = this;
+        const equalizer = [
+            { bands: 0, gain: 0.6 },
+            { bands: 1, gain: 0.67 },
+            { bands: 2, gain: 0.67 },
+            { bands: 3, gain: 0 },
+            { bands: 4, gain: -0.5 },
+            { bands: 5, gain: 0.15 },
+            { bands: 6, gain: -0.45 },
+            { bands: 7, gain: 0.23 },
+            { bands: 8, gain: 0.35 },
+            { bands: 9, gain: 0.45 },
+            { bands: 10, gain: 0.55 },
+            { bands: 11, gain: 0.6 },
+            { bands: 12, gain: 0.55 },
+            { bands: 13, gain: 0 },
+        ];
+        setEqualizer(equalizer);
+        return this;
+    }
+    /** Applies the vaporwave filter. */
+    vaporwave() {
+        const { setEqualizer, setTimescale } = this;
+        const equalizer = [
+            { bands: 0, gain: 0 },
+            { bands: 1, gain: 0 },
+            { bands: 2, gain: 0 },
+            { bands: 3, gain: 0 },
+            { bands: 4, gain: 0 },
+            { bands: 5, gain: 0 },
+            { bands: 6, gain: 0 },
+            { bands: 7, gain: 0 },
+            { bands: 8, gain: 0.15 },
+            { bands: 9, gain: 0.15 },
+            { bands: 10, gain: 0.15 },
+            { bands: 11, gain: 0.15 },
+            { bands: 12, gain: 0.15 },
+            { bands: 13, gain: 0.15 },
+        ];
+        setEqualizer(equalizer);
+        setTimescale({ pitch: 0.55 });
+        return this;
+    }
     setKaraoke(karaoke) {
         this.karaoke = karaoke || null;
         this.updateFilters();
@@ -43,11 +164,6 @@ class Filters {
     }
     setTimescale(timescale) {
         this.timescale = timescale || null;
-        this.updateFilters();
-        return this;
-    }
-    setTremolo(tremolo) {
-        this.tremolo = tremolo || null;
         this.updateFilters();
         return this;
     }
@@ -61,32 +177,18 @@ class Filters {
         this.updateFilters();
         return this;
     }
-    setDistortion(distortion) {
-        this.distortion = distortion || null;
-        this.updateFilters();
-        return this;
-    }
-    setChannelMix(mix) {
-        this.channelMix = mix || null;
-        this.updateFilters();
-        return this;
-    }
-    setLowPass(pass) {
-        this.lowPass = pass || null;
-        this.updateFilters();
-        return this;
-    }
     clearFilters() {
         this.player.filters = new Filters(this.player);
         this.updateFilters();
         return this;
     }
     updateFilters() {
-        const { equalizer, karaoke, timescale, tremolo, vibrato, rotation, distortion, channelMix, lowPass, volume } = this;
+        const { equalizer, karaoke, timescale, vibrato, rotation, volume } = this;
         this.player.node.rest.updatePlayer({
             guildId: this.player.guildId,
-            data: { filters: { volume, equalizer, karaoke, timescale, tremolo, vibrato, rotation, distortion, channelMix, lowPass,
-                } }
+            data: {
+                filters: { equalizer, karaoke, timescale, vibrato, rotation, volume }
+            }
         });
         return this;
     }

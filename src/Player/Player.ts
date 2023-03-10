@@ -6,7 +6,6 @@ import Queue from "../guild/Queue";
 import { EventEmitter } from "events";
 import { Filters } from "./Filters";
 import { Response } from "../guild/Response";
-type Loop = "NONE" | "TRACK" | "QUEUE";
 
 export class Player extends EventEmitter {
   public readonly data: Record<string, unknown>;
@@ -110,7 +109,7 @@ export class Player extends EventEmitter {
   }
 
   /** Pauses the player. */
-  public pause(toggle: boolean = true) {
+  public pause(toggle: boolean) {
     this.node.rest.updatePlayer({
       guildId: this.guildId,
       data: { paused: toggle },
@@ -309,15 +308,15 @@ export class Player extends EventEmitter {
 
   /** Resolves the provided query. */
   async resolve({ query, source, requester }: ResolveOptions) {
-    const url = new URL(query);
-		const track =
-			url.protocol === 'http:' || url.protocol === 'https:'
-				? query
-				: `${source || 'dzsearch'}:${query}`;
-		const response = await this.node.rest.get(
-			`/v3/loadtracks?identifier=${encodeURIComponent(track)}`,
-		);
+    const regex = /^https?:\/\//;
+    let url: any;
 
+    if (regex.test(query)) url = `/v3/loadtracks?identifier=${encodeURIComponent(query)}`;
+    else url = `/v3/loadtracks?identifier=${encodeURIComponent(
+      `${source || "dzsearch"}:${query}`
+    )}`;
+  
+    const response = await this.node.rest.get(url);
     return new Response(response, requester);
   }
 
@@ -326,3 +325,5 @@ export class Player extends EventEmitter {
     this.automata.send({ op: 4, d: data });
   }
 }
+
+export type Loop = "NONE" | "TRACK" | "QUEUE";

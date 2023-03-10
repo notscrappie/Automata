@@ -1,28 +1,7 @@
 import { Manager, AutomataOptions, NodeOptions } from "../Manager";
 import WebSocket from "ws";
 import { Rest } from "./Rest";
-
-export interface NodeStats {
-  players: number;
-  playingPlayers: number;
-  memory: {
-    reservable: number;
-    used: number;
-    free: number;
-    allocated: number;
-  };
-  frameStats: {
-    sent: number;
-    deficit: number;
-    nulled: number;
-  };
-  cpu: {
-    cores: number;
-    systemLoad: number;
-    lavalinkLoad: number;
-  };
-  uptime: number;
-}
+import { Player } from "../Player/Player";
 
 export class Node {
   public isConnected: boolean;
@@ -68,36 +47,49 @@ export class Node {
     this.stats = null;
   }
 
-  public connect() {
+  /** Connects to the Lavalink server using the WebSocket. */
+  public connect(): void {
     if (this.ws) this.ws.close();
+
     const headers = {
       Authorization: this.password,
       "User-Id": this.automata.userId,
-      "Client-Name": "sr_client",
+      "Client-Name": "Shadowrunners - Automata Client",
     };
+
     if (this.resumeKey) headers["Resume-Key"] = this.resumeKey;
+
     this.ws = new WebSocket(this.socketURL, { headers });
-    this.ws.on("open", this.open.bind(this));
-    this.ws.on("error", this.error.bind(this));
-    this.ws.on("message", this.message.bind(this));
-    this.ws.on("close", this.close.bind(this));
+    this.ws.on("open", () => this.open());
+    this.ws.on("error", (error: any) => this.error(error));
+    this.ws.on("message", (message: string) => this.message(message));
+    this.ws.on("close", (code: string) => this.close(code));
   }
 
-  public send(payload: any) {
+  /** Sends the payload to the Lavalink server. */
+  public async send(payload: any): Promise<void> {
     const data = JSON.stringify(payload);
-    this.ws.send(data, (error) => {
-      if (error) return error;
-      return null;
+    if (this.ws.readyState === WebSocket.OPEN) this.ws.send(data);
+    else await new Promise<void>((resolve, reject) => {
+      this.ws.once("open", () => {
+        this.ws.send(data);
+        resolve();
+      });
+      this.ws.once("error", (error: any) => {
+        reject(error);
+      });
     });
   }
 
+  /** Reconnects the client to the Lavalink server. */
   public reconnect() {
+    const { reconnectTries, name, attempt,  } = this;
     this.reconnectAttempt = setTimeout(() => {
-      if (this.attempt > this.reconnectTries) {
+      if (attempt > reconnectTries) 
         throw new Error(
-          `[Poru Websocket] Unable to connect with ${this.name} node after ${this.reconnectTries} tries`
+          `Unable to connect to node ${name} after ${reconnectTries} tries.`
         );
-      }
+      
       this.isConnected = false;
       this.ws?.removeAllListeners();
       this.ws = null;
@@ -106,37 +98,44 @@ export class Node {
       this.attempt++;
     }, this.reconnectTimeout);
   }
-  public disconnect() {
+
+  /** Disconnects the client from the Lavalink server. */
+  public async disconnect() {
     if (!this.isConnected) return;
 
-    this.automata.players.forEach((player) => {
-      if (player.node == this) {
-       player.AutoMoveNode();
-      }
-    });
+    let player;
+    const playersToMove: Player[] = [];
+
+    for (player of this.automata.players) {
+      if (player.node === this) playersToMove.push(player);
+    }
+
+    await Promise.all(playersToMove.map((player) => player.AutoMoveNode()));
+
     this.ws.close(1000, "destroy");
     this.ws?.removeAllListeners();
-    this.ws = null;
-    //    this.reconnect = 1;
     this.automata.nodes.delete(this.name);
     this.automata.emit("nodeDisconnect", this);
   }
 
+  /** Returns the penalty of the current node based on its statistics. */
   get penalties(): number {
     let penalties = 0;
-    if (!this.isConnected) return penalties;
-    penalties += this.stats.players;
-    penalties += Math.round(
-      Math.pow(1.05, 100 * this.stats.cpu.systemLoad) * 10 - 10
-    );
+    const { players, cpu, frameStats } = this.stats;
+
+    penalties += players;
+    penalties += Math.round(Math.pow(1.05, 100 * cpu.systemLoad) * 10 - 10);
+    
     if (this.stats.frameStats) {
-      penalties += this.stats.frameStats.deficit;
-      penalties += this.stats.frameStats.nulled * 2;
+      penalties += frameStats.deficit;
+      penalties += frameStats.nulled * 2;
     }
+
     return penalties;
   }
 
-  private open() {
+  /** Handles the 'open' event of the WebSocket connection. */
+  private open(): void {
     if (this.reconnectAttempt) {
       clearTimeout(this.reconnectAttempt);
       delete this.reconnectAttempt;
@@ -146,56 +145,83 @@ export class Node {
     this.isConnected = true;
 
     if (this.autoResume) {
-      for (const player of this.automata.players.values()) {
-        if (player.node === this) {
-          player.restart();
-        }
+      for (const [_, player] of this.automata.players) {
+        if (player.node === this) player.restart?.();
       }
     }
   }
 
+  /** Sets the stats. */
   private setStats(packet: NodeStats) {
     this.stats = packet;
   }
 
-  private async message(payload: any) {
+  /** Handles the message received from the Lavalink node. */
+  private message(payload: any): void {
+    const { sessionId, resumeKey, resumeTimeout } = this;
     const packet = JSON.parse(payload);
-    if (!packet?.op) return;
-
     this.automata.emit("raw", "Node", packet)
 
-    if (packet.op === "stats") {
-      delete packet.op;
-      this.setStats(packet);
+    switch (packet.op) {
+      case "stats": 
+        delete packet.op;
+        this.setStats(packet);
+        break;
+      case "ready":
+        this.rest.setSessionId(packet.sessionId);
+        this.sessionId = packet.sessionId;
+        if (this.resumeKey) 
+          this.rest.patch(`/v3/sessions/${sessionId}`, { resumingKey: resumeKey, timeout: resumeTimeout });
+        break;
+      default:
+      const player = this.automata.players.get(packet.guildId);
+      if (player) player.emit(packet.op, packet);
+      break;
     }
-    if (packet.op === "ready") {
-      this.rest.setSessionId(packet.sessionId);
-      this.sessionId = packet.sessionId;
-      if (this.resumeKey) {
-        this.rest.patch(`/v3/sessions/${this.sessionId}`, { resumingKey: this.resumeKey, timeout: this.resumeTimeout })
-      }
-
-    }
-    const player = this.automata.players.get(packet.guildId);
-    if (packet.guildId && player) player.emit(packet.op, packet);
   }
-
+    
+  /** Handles the 'close' event of the WebSocket connection. */
   private close(event: any): void {
     this.disconnect();
     this.automata.emit("nodeDisconnect", this, event);
     if (event !== 1000) this.reconnect();
   }
 
+  /** Handles the 'error' event of the WebSocket connection. */
   private error(event: any): void {
     if (!event) return;
     this.automata.emit("nodeError", this, event);
   }
 
+  /** Gets the route planner's current status. */
   public async getRoutePlannerStatus(): Promise<any> {
-    return await this.rest.get(`/v3/routeplanner/status`)
+    return await this.rest.get(`/v3/routeplanner/status`);
   }
 
+  /** Removes a failed address from the route planner's blacklist. */
   public async unmarkFailedAddress(address: string): Promise<any> {
     return this.rest.post(`/v3/routeplanner/free/address`, { address })
   }
+}
+
+export interface NodeStats {
+  players: number;
+  playingPlayers: number;
+  memory: {
+    reservable: number;
+    used: number;
+    free: number;
+    allocated: number;
+  };
+  frameStats: {
+    sent: number;
+    deficit: number;
+    nulled: number;
+  };
+  cpu: {
+    cores: number;
+    systemLoad: number;
+    lavalinkLoad: number;
+  };
+  uptime: number;
 }

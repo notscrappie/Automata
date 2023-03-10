@@ -1,22 +1,44 @@
 import { Player } from "./Player";
+export declare class Filters {
+    player: Player;
+    volume: number;
+    equalizer: Band[];
+    vibrato: vibratoOptions;
+    rotation: rotationOptions;
+    timescale: timescaleOptions;
+    karaoke: karaokeOptions;
+    constructor(player: Player);
+    /** Sets the equalizer bands and updates the filters. */
+    setEqualizer(bands: Band[]): Filters;
+    /** Applies the bass boost filter. */
+    bassBoost(): Filters;
+    /** Applies the nightcore filter. */
+    nightcore(): Filters;
+    /** Applies the slow motion filter. */
+    slowmo(): Filters;
+    /** Applies the soft filter. */
+    soft(): Filters;
+    /** Applies the tv filter. */
+    tv(): Filters;
+    /** Applies the treble bass filter. */
+    trebleBass(): Filters;
+    /** Applies the vaporwave filter. */
+    vaporwave(): Filters;
+    setKaraoke(karaoke?: karaokeOptions): Filters;
+    setTimescale(timescale?: timescaleOptions): Filters;
+    setVibrato(vibrato?: vibratoOptions): Filters;
+    setRotation(rotation?: rotationOptions): Filters;
+    clearFilters(): Filters;
+    updateFilters(): Filters;
+}
 interface Band {
     bands: number;
     gain: number;
-}
-interface karaokeOptions {
-    level: number;
-    monoLevel: number;
-    filterBand: number;
-    filterWidth: number;
 }
 interface timescaleOptions {
     speed?: number;
     pitch?: number;
     rate?: number;
-}
-interface tremoloOptions {
-    frequency: number;
-    depth: number;
 }
 interface vibratoOptions {
     frequency: number;
@@ -25,53 +47,10 @@ interface vibratoOptions {
 interface rotationOptions {
     rotationHz: number;
 }
-interface distortionOptions {
-    sinOffset?: number;
-    sinScale?: number;
-    cosOffset?: number;
-    cosScale?: number;
-    tanOffset?: number;
-    tanScale?: number;
-    offset?: number;
-    scale?: number;
-}
-export interface channelMixOptions {
-    leftToLeft?: number;
-    leftToRight?: number;
-    rightToLeft?: number;
-    rightToRight?: number;
-}
-interface lowPassOptions {
-    smoothing: number;
-}
-export declare class Filters {
-    player: Player;
-    volume: number;
-    equalizer: Band[];
-    karaoke: karaokeOptions;
-    tremolo: tremoloOptions;
-    vibrato: vibratoOptions;
-    rotation: rotationOptions;
-    distortion: distortionOptions;
-    channelMix: channelMixOptions;
-    lowPass: lowPassOptions;
-    timescale: timescaleOptions;
-    constructor(player: any);
-    setEqualizer(bands: Band[]): Filters;
-    /**
-        * Change the karaoke Options applied to the currently playing track
-        * @param karaoke An object that conforms to the KaraokeOptions type that defines a range of frequencies to mute
-        * @returns The current filter instance
-        */
-    setKaraoke(karaoke?: karaokeOptions): Filters;
-    setTimescale(timescale?: timescaleOptions): Filters;
-    setTremolo(tremolo?: tremoloOptions): Filters;
-    setVibrato(vibrato?: vibratoOptions): Filters;
-    setRotation(rotation?: rotationOptions): Filters;
-    setDistortion(distortion: distortionOptions): Filters;
-    setChannelMix(mix: channelMixOptions): Filters;
-    setLowPass(pass: lowPassOptions): Filters;
-    clearFilters(): Filters;
-    updateFilters(): Filters;
+interface karaokeOptions {
+    level?: number;
+    monoLevel?: number;
+    filterBand?: number;
+    filterWidth?: number;
 }
 export {};

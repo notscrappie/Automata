@@ -20,29 +20,27 @@ class Connection {
         this.self_mute = false;
         this.self_deaf = false;
     }
-    setServersUpdate(data) {
-        if (!data.endpoint)
+    /** Updates server information for the player's voice connection. */
+    setServersUpdate({ endpoint, token }) {
+        if (!endpoint)
             throw new Error("NO Session id found");
-        this.voice.endpoint = data.endpoint;
-        this.voice.token = data.token;
-        this.region =
-            data.endpoint.split(".").shift()?.replace(/[0-9]/g, "") || null;
+        this.voice.endpoint = endpoint;
+        this.voice.token = token;
+        this.region = endpoint.split(".").shift()?.replace(/[0-9]/g, "") ?? null;
         this.player.node.rest.updatePlayer({
             guildId: this.player.guildId,
             data: { voice: this.voice },
         });
     }
-    setStateUpdate(data) {
-        const { session_id, channel_id, self_deaf, self_mute } = data;
+    /** Updates the state of the player. */
+    setStateUpdate({ session_id, channel_id, self_deaf, self_mute }) {
         if (this.player.voiceChannel &&
             channel_id &&
-            this.player.voiceChannel !== channel_id) {
+            this.player.voiceChannel !== channel_id)
             this.player.voiceChannel = channel_id;
-        }
-        this.self_deaf = self_deaf;
-        this.self_mute = self_mute;
-        this.voice.sessionId = session_id || null;
-        //  this.player.poru.emit('debug', this.player.node.name, `[Voice] <- [Discord] : State Update Received | Channel: ${this.player.voiceChannel} Session ID: ${session_id} Guild: ${this.player.guildId}`);
+        this.self_deaf = self_deaf ?? true;
+        this.self_mute = self_mute ?? false;
+        this.voice.sessionId = session_id ?? null;
     }
 }
 exports.Connection = Connection;
