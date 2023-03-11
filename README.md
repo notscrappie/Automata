@@ -2,6 +2,10 @@
   <img src="https://i.imgur.com/GTPBh5x.png" />
 </p>
 
+<div align="center"> 
+  <img src="https://deepsource.io/gh/shadowrunners/Automata.svg/?label=active+issues&show_trend=true&token=lWLKFmoDqIp0GpfoY2sCAJS2"/>
+</div>
+
 # What's this and how is it different from Poru?
 
 Automata is a fork of the Poru lavalink client developed and maintained by [parasop](https://github.com/parasop). This fork contains tweaks to certain functions and modified functionality such as the de-coupling from YouTube entirely with this fork only being able to play audio from platforms such as Deezer, SoundCloud, Spotify etc and some performance related optimizations.
