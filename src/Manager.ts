@@ -71,7 +71,7 @@ export class Manager extends EventEmitter {
   }
 
   /** Retrives a node. */
-  getNode(identifier: string = "auto") {
+  getNode(identifier = "auto") {
     if (!this.nodes.size) throw new Error('There aren\'t any available nodes.');
     if (identifier === "auto") return this.leastUsedNodes;
   

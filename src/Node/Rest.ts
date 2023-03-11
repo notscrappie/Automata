@@ -116,8 +116,8 @@ export interface playOptions {
     endTime?: number;
     volume?: number;
     position?: number;
-    paused?: Boolean;
-    filters?: Object;
+    paused?: boolean;
+    filters?: object;
     voice?: any;
   };
 }
