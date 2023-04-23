@@ -83,13 +83,7 @@ export class Node {
 
   /** Reconnects the client to the Lavalink server. */
   public reconnect() {
-    const { reconnectTries, name, attempt,  } = this;
-    this.reconnectAttempt = setTimeout(() => {
-      if (attempt > reconnectTries) 
-        throw new Error(
-          `Unable to connect to node ${name} after ${reconnectTries} tries.`
-        );
-      
+    this.reconnectAttempt = setTimeout(() => {      
       this.isConnected = false;
       this.ws?.removeAllListeners();
       this.ws = null;

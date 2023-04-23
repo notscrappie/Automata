@@ -1,12 +1,12 @@
 /// <reference types="node" />
 import { Manager, ResolveOptions, ConnectionOptions } from "../Manager";
 import { Node } from "../Node/Node";
-import { Track } from "../guild/Track";
+import { Track } from "../Guild/Track";
 import { Connection } from "./Connection";
-import Queue from "../guild/Queue";
+import Queue from "../Guild/Queue";
 import { EventEmitter } from "events";
 import { Filters } from "./Filters";
-import { Response } from "../guild/Response";
+import { Response } from "../Guild/Response";
 export declare class Player extends EventEmitter {
     readonly data: Record<string, unknown>;
     automata: Manager;

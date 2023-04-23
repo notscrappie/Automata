@@ -2,8 +2,8 @@
 import { Node } from "./Node/Node";
 import { Player } from "./Player/Player";
 import { EventEmitter } from "events";
-import { Response } from "./guild/Response";
-import { Track } from "./guild/Track";
+import { Response } from "./Guild/Response";
+import { Track } from "./Guild/Track";
 export declare class Manager extends EventEmitter {
     readonly client: any;
     readonly _nodes: NodeOptions[];
