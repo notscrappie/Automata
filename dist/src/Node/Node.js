@@ -1,10 +1,7 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Node = void 0;
-const ws_1 = __importDefault(require("ws"));
+const ws_1 = require("ws");
 const Rest_1 = require("./Rest");
 class Node {
     isConnected;
@@ -31,9 +28,9 @@ class Node {
         this.automata = automata;
         this.name = node.name;
         this.options = node;
-        this.restURL = `http${node.secure ? "s" : ""}://${node.host}:${node.port}`;
-        this.socketURL = `${this.secure ? "wss" : "ws"}://${node.host}:${node.port}/`;
-        this.password = node.password || "youshallnotpass";
+        this.restURL = `http${node.secure ? 's' : ''}://${node.host}:${node.port}`;
+        this.socketURL = `${this.secure ? 'wss' : 'ws'}://${node.host}:${node.port}/`;
+        this.password = node.password || 'youshallnotpass';
         this.secure = node.secure || false;
         this.regions = node.region || null;
         this.sessionId = null;
@@ -50,47 +47,38 @@ class Node {
     }
     /** Connects to the Lavalink server using the WebSocket. */
     connect() {
-        if (this.ws)
-            this.ws.close();
-        const headers = {
+        const headers = Object.assign({
             Authorization: this.password,
-            "User-Id": this.automata.userId,
-            "Client-Name": "Shadowrunners - Automata Client",
-        };
-        if (this.resumeKey)
-            headers["Resume-Key"] = this.resumeKey;
-        this.ws = new ws_1.default(this.socketURL, { headers });
-        this.ws.on("open", () => this.open());
-        this.ws.on("error", (error) => this.error(error));
-        this.ws.on("message", (message) => this.message(message));
-        this.ws.on("close", (code) => this.close(code));
+            'User-Id': this.automata.userId,
+            'Client-Name': 'Shadowrunners - Automata Client',
+        }, this.resumeKey && { 'Resume-Key': this.resumeKey });
+        this.ws = new ws_1.WebSocket(this.socketURL, { headers });
+        this.ws.on('open', this.open.bind(this));
+        this.ws.on('error', this.error.bind(this));
+        this.ws.on('message', this.message.bind(this));
+        this.ws.on('close', this.close.bind(this));
     }
     /** Sends the payload to the Lavalink server. */
-    async send(payload) {
+    send(payload) {
         const data = JSON.stringify(payload);
-        if (this.ws.readyState === ws_1.default.OPEN)
+        try {
+            console.log(`Send function data: ${data}`);
             this.ws.send(data);
-        else
-            await new Promise((resolve, reject) => {
-                this.ws.once("open", () => {
-                    this.ws.send(data);
-                    resolve();
-                });
-                this.ws.once("error", (error) => {
-                    reject(error);
-                });
-            });
+            return null;
+        }
+        catch (error) {
+            return error;
+        }
     }
     /** Reconnects the client to the Lavalink server. */
     reconnect() {
-        const { reconnectTries, name, attempt, } = this;
         this.reconnectAttempt = setTimeout(() => {
-            if (attempt > reconnectTries)
-                throw new Error(`Unable to connect to node ${name} after ${reconnectTries} tries.`);
+            if (this.attempt > this.reconnectTries)
+                this.automata.emit('nodeError', this);
             this.isConnected = false;
             this.ws?.removeAllListeners();
             this.ws = null;
-            this.automata.emit("nodeReconnect", this);
+            this.automata.emit('nodeReconnect', this);
             this.connect();
             this.attempt++;
         }, this.reconnectTimeout);
@@ -99,29 +87,23 @@ class Node {
     async disconnect() {
         if (!this.isConnected)
             return;
-        let player;
-        const playersToMove = [];
-        for (player of this.automata.players) {
+        this.automata.players.forEach((player) => {
             if (player.node === this)
-                playersToMove.push(player);
-        }
-        await Promise.all(playersToMove.map((player) => player.AutoMoveNode()));
-        this.ws.close(1000, "destroy");
-        this.ws?.removeAllListeners();
+                player.AutoMoveNode();
+        });
+        this.ws.close(1000, 'destroy');
+        this.ws = null;
         this.automata.nodes.delete(this.name);
-        this.automata.emit("nodeDisconnect", this);
+        this.automata.emit('nodeDisconnect', this);
     }
     /** Returns the penalty of the current node based on its statistics. */
     get penalties() {
-        let penalties = 0;
-        const { players, cpu, frameStats } = this.stats;
-        penalties += players;
-        penalties += Math.round(Math.pow(1.05, 100 * cpu.systemLoad) * 10 - 10);
-        if (this.stats.frameStats) {
-            penalties += frameStats.deficit;
-            penalties += frameStats.nulled * 2;
-        }
-        return penalties;
+        if (!this.isConnected)
+            return 0;
+        return this.stats.players +
+            Math.round(Math.pow(1.05, 100 * this.stats.cpu.systemLoad) * 10 - 10) +
+            (this.stats.frameStats?.deficit ?? 0) +
+            (this.stats.frameStats?.nulled ?? 0) * 2;
     }
     /** Handles the 'open' event of the WebSocket connection. */
     open() {
@@ -129,12 +111,13 @@ class Node {
             clearTimeout(this.reconnectAttempt);
             delete this.reconnectAttempt;
         }
-        this.automata.emit("nodeConnect", this);
+        this.automata.emit('nodeConnect', this);
         this.isConnected = true;
         if (this.autoResume) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             for (const [_, player] of this.automata.players) {
                 if (player.node === this)
-                    player.restart?.();
+                    player.restart();
             }
         }
     }
@@ -144,22 +127,24 @@ class Node {
     }
     /** Handles the message received from the Lavalink node. */
     message(payload) {
-        const { sessionId, resumeKey, resumeTimeout } = this;
         const packet = JSON.parse(payload);
-        this.automata.emit("raw", "Node", packet);
+        const player = this.automata.players.get(packet.guildId);
+        this.automata.emit('raw', 'Node', packet);
         switch (packet.op) {
-            case "stats":
+            case 'stats':
                 delete packet.op;
                 this.setStats(packet);
                 break;
-            case "ready":
+            case 'ready':
                 this.rest.setSessionId(packet.sessionId);
                 this.sessionId = packet.sessionId;
                 if (this.resumeKey)
-                    this.rest.patch(`/v3/sessions/${sessionId}`, { resumingKey: resumeKey, timeout: resumeTimeout });
+                    this.rest.patch(`/v3/sessions/${this.sessionId}`, {
+                        resumingKey: this.resumeKey,
+                        timeout: this.resumeTimeout,
+                    });
                 break;
             default:
-                const player = this.automata.players.get(packet.guildId);
                 if (player)
                     player.emit(packet.op, packet);
                 break;
@@ -167,24 +152,13 @@ class Node {
     }
     /** Handles the 'close' event of the WebSocket connection. */
     close(event) {
-        this.disconnect();
-        this.automata.emit("nodeDisconnect", this, event);
-        if (event !== 1000)
-            this.reconnect();
+        this.automata.emit('nodeDisconnect', this, event);
     }
     /** Handles the 'error' event of the WebSocket connection. */
     error(event) {
         if (!event)
             return;
-        this.automata.emit("nodeError", this, event);
-    }
-    /** Gets the route planner's current status. */
-    async getRoutePlannerStatus() {
-        return await this.rest.get(`/v3/routeplanner/status`);
-    }
-    /** Removes a failed address from the route planner's blacklist. */
-    unmarkFailedAddress(address) {
-        return this.rest.post(`/v3/routeplanner/free/address`, { address });
+        this.automata.emit('nodeError', this, event);
     }
 }
 exports.Node = Node;

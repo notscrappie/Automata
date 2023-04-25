@@ -4,11 +4,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Player = void 0;
+const Track_1 = require("../Guild/Track");
 const Connection_1 = require("./Connection");
-const Queue_1 = __importDefault(require("../guild/Queue"));
+const Queue_1 = __importDefault(require("../Guild/Queue"));
 const events_1 = require("events");
 const Filters_1 = require("./Filters");
-const Response_1 = require("../guild/Response");
 class Player extends events_1.EventEmitter {
     data;
     automata;
@@ -19,8 +19,6 @@ class Player extends events_1.EventEmitter {
     guildId;
     voiceChannel;
     textChannel;
-    currentTrack;
-    previousTrack;
     isPlaying;
     isPaused;
     isConnected;
@@ -41,8 +39,6 @@ class Player extends events_1.EventEmitter {
         this.filters = new Filters_1.Filters(this);
         this.voiceChannel = options.voiceChannel;
         this.textChannel = options.textChannel;
-        this.currentTrack = null;
-        this.previousTrack = null;
         this.deaf = options.deaf ?? false;
         this.mute = options.mute ?? false;
         this.volume = 100;
@@ -52,45 +48,45 @@ class Player extends events_1.EventEmitter {
         this.ping = 0;
         this.timestamp = null;
         this.isConnected = false;
-        this.loop = "NONE";
+        this.loop = 'NONE';
         this.data = {};
-        this.on("playerUpdate", ({ state: { connected, position, ping, time } }) => {
+        this.on('playerUpdate', ({ state: { connected, position, ping, time } }) => {
             this.isConnected = connected;
             this.position = position;
             this.ping = ping;
             this.timestamp = time;
         });
-        this.on("event", (data) => this.eventHandler(data));
+        this.on('event', ({ type }) => this.eventHandler(type));
     }
     /** Sends a request to the server and plays the requested song. */
     async play() {
         if (this.queue.length === 0)
             return;
-        const { track } = this.currentTrack = this.queue.shift();
+        const { track } = this.queue.current = this.queue.shift();
         if (!track)
-            await this.currentTrack.resolve(this.automata);
-        this.isPlaying = true;
-        this.position = 0;
+            await this.queue.current.resolve(this.automata);
+        Object.assign(this, { position: 0, isPlaying: true });
         this.node.rest.updatePlayer({
             guildId: this.guildId,
             data: {
-                encodedTrack: this.currentTrack.track,
+                encodedTrack: this.queue.current.track,
             },
         });
     }
     /** Connects to the user's voice channel. */
     connect(options = this) {
-        const { guildId, voiceChannel, deaf, mute } = options;
         this.send({
-            guild_id: guildId,
-            channel_id: voiceChannel,
-            self_deaf: deaf ?? true,
-            self_mute: mute ?? false,
+            guild_id: options.guildId,
+            channel_id: options.voiceChannel,
+            self_deaf: options.deaf ?? true,
+            self_mute: options.mute ?? false,
         });
         this.isConnected = true;
     }
     /** Stops the player from playing. */
     stop() {
+        if (!this.isPlaying)
+            return;
         this.position = 0;
         this.isPlaying = false;
         this.node.rest.updatePlayer({
@@ -111,7 +107,7 @@ class Player extends events_1.EventEmitter {
     }
     /** Seeks the track. */
     seekTo(position) {
-        const newPosition = Math.min(position + this.position, this.currentTrack.info.length);
+        const newPosition = Math.min(position + this.position, this.queue.current.length);
         this.node.rest.updatePlayer({ guildId: this.guildId, data: { position: newPosition } });
     }
     /** Sets the volume of the player. */
@@ -176,7 +172,7 @@ class Player extends events_1.EventEmitter {
     }
     /** Restarts the player. */
     restart() {
-        if (!this.currentTrack?.track) {
+        if (!this.queue.current?.track) {
             if (this.queue.length)
                 this.play();
             return;
@@ -185,7 +181,7 @@ class Player extends events_1.EventEmitter {
             guildId: this.guildId,
             data: {
                 position: this.position,
-                encodedTrack: this.currentTrack.track,
+                encodedTrack: this.queue.current.track,
             },
         });
     }
@@ -195,7 +191,7 @@ class Player extends events_1.EventEmitter {
         if (!node || node.name === this.node.name)
             return;
         if (!node.isConnected)
-            throw new Error("The node provided is not available.");
+            throw new Error('The node provided is not available.');
         this.node.rest.destroyPlayer(this.guildId);
         this.automata.players.delete(this.guildId);
         this.node = node;
@@ -206,7 +202,7 @@ class Player extends events_1.EventEmitter {
     AutoMoveNode() {
         const [node] = this.automata.leastUsedNodes;
         if (!node)
-            throw new Error("There aren't any available nodes.");
+            throw new Error('There aren\'t any available nodes.');
         if (!this.automata.nodes.has(node.name))
             return this.destroy();
         this.moveNode(node.name);
@@ -214,46 +210,46 @@ class Player extends events_1.EventEmitter {
     /** Handles lavalink related events. */
     eventHandler(data) {
         switch (data.type) {
-            case "TrackStartEvent": {
+            case 'TrackStartEvent': {
                 this.isPlaying = true;
-                this.automata.emit("playerStart", this, this.currentTrack);
+                this.automata.emit('playerStart', this, this.queue.current);
                 break;
             }
-            case "TrackEndEvent": {
-                this.previousTrack = this.currentTrack;
-                if (this.loop === "TRACK") {
-                    this.queue.unshift(this.previousTrack);
-                    this.automata.emit("playerEnd", this, this.currentTrack);
+            case 'TrackEndEvent': {
+                this.queue.previous = this.queue.current;
+                if (this.loop === 'TRACK') {
+                    this.queue.unshift(this.queue.previous);
+                    this.automata.emit('playerEnd', this, this.queue.current);
                     return this.play();
                 }
-                else if (this.currentTrack && this.loop === "QUEUE") {
-                    this.queue.push(this.previousTrack);
-                    this.automata.emit("playerEnd", this, this.currentTrack, data);
+                else if (this.queue.current && this.loop === 'QUEUE') {
+                    this.queue.push(this.queue.previous);
+                    this.automata.emit('playerEnd', this, this.queue.current, data);
                     return this.play();
                 }
                 if (this.queue.length === 0) {
                     this.isPlaying = false;
-                    return this.automata.emit("playerDisconnect", this);
+                    return this.automata.emit('playerDisconnect', this);
                 }
                 else if (this.queue.length > 0) {
-                    this.automata.emit("playerEnd", this, this.currentTrack);
+                    this.automata.emit('playerEnd', this, this.queue.current);
                     return this.play();
                 }
                 this.isPlaying = false;
-                this.automata.emit("playerDisconnect", this);
+                this.automata.emit('playerDisconnect', this);
                 break;
             }
-            case "TrackStuckEvent": {
-                this.automata.emit("playerError", this, this.currentTrack, data);
+            case 'TrackStuckEvent': {
+                this.automata.emit('playerError', this, this.queue.current, data);
                 this.stop();
                 break;
             }
-            case "TrackExceptionEvent": {
-                this.automata.emit("playerError", this, this.currentTrack, data);
+            case 'TrackExceptionEvent': {
+                this.automata.emit('playerError', this, this.queue.current, data);
                 this.stop();
                 break;
             }
-            case "WebSocketClosedEvent": {
+            case 'WebSocketClosedEvent': {
                 if ([4015, 4009].includes(data.code)) {
                     this.send({
                         guild_id: data.guildId,
@@ -262,13 +258,11 @@ class Player extends events_1.EventEmitter {
                         self_deaf: this.deaf,
                     });
                 }
-                this.automata.emit("playerClose", this, this.currentTrack, data);
+                this.automata.emit('playerClose', this, this.queue.current, data);
                 this.pause(true);
                 break;
             }
-            default: {
-                throw new Error(`An unknown event: ${data}`);
-            }
+            default: break;
         }
     }
     /** Resolves the provided query. */
@@ -278,9 +272,9 @@ class Player extends events_1.EventEmitter {
         if (regex.test(query))
             url = `/v3/loadtracks?identifier=${encodeURIComponent(query)}`;
         else
-            url = `/v3/loadtracks?identifier=${encodeURIComponent(`${source || "dzsearch"}:${query}`)}`;
+            url = `/v3/loadtracks?identifier=${encodeURIComponent(`${source || 'dzsearch'}:${query}`)}`;
         const response = await this.node.rest.get(url);
-        return new Response_1.Response(response, requester);
+        return new Track_1.Track(response, requester);
     }
     /** Sends the data to the Lavalink node the old fashioned way. */
     send(data) {

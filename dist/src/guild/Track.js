@@ -6,35 +6,49 @@ class Track {
     info;
     constructor({ track, info }, requester) {
         this.track = track;
-        this.info = {
-            ...info,
-            image: info.image || `https://i.ytimg.com/vi/${info.identifier}/maxresdefault.jpg` || null,
-            requester
-        };
+        this.info = { ...info, requester };
     }
     /** Resolves the track. */
     async resolve(automata) {
-        const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         const query = `${this.info.author ?? ''} ${this.info.title ?? ''}`.trim();
         const result = await automata.resolve({
             query,
-            source: automata.options.defaultPlatform || "dzsearch",
-            requester: this.info.requester
+            source: automata.options.defaultPlatform || 'dzsearch',
+            requester: this.info.requester,
         });
-        const authorRegex = new RegExp(`^${escapeRegExp(this.info.author)}$`, 'i');
-        const sameAuthorOrTitle = (track) => authorRegex.test(track.info.author) ||
-            new RegExp(`^${escapeRegExp(this.info.title)}$`, 'i').test(track.info.title);
-        const officialAudio = result.tracks.find((track) => sameAuthorOrTitle(track) &&
-            new RegExp(/- topic$/i).test(track.info.author));
-        const sameDuration = result.tracks.find((track) => track.info.length >= (this.info.length ?? 0) - 2000 &&
-            track.info.length <= (this.info.length ?? 0) + 2000 &&
-            sameAuthorOrTitle(track));
-        const trackToUse = sameDuration ?? officialAudio ?? result.tracks[0];
+        const trackToUse = result.tracks[0];
         if (trackToUse) {
             this.info.identifier = trackToUse?.info?.identifier;
             this.track = trackToUse?.track;
         }
         return this;
+    }
+    get identifier() {
+        return this.info.identifier;
+    }
+    get isSeekable() {
+        return this.info.isSeekable;
+    }
+    get author() {
+        return this.info.author;
+    }
+    get length() {
+        return this.info.length;
+    }
+    get isStream() {
+        return this.info.isStream;
+    }
+    get title() {
+        return this.info.title;
+    }
+    get uri() {
+        return this.info.uri;
+    }
+    get sourceName() {
+        return this.info.sourceName;
+    }
+    get requester() {
+        return this.info.requester;
     }
 }
 exports.Track = Track;

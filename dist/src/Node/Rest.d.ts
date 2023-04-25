@@ -1,5 +1,5 @@
-import { Node } from "./Node";
-import { Manager } from "../Manager";
+import { Node } from './Node';
+import { Manager } from '../Manager';
 export declare class Rest {
     private sessionId;
     private password;
@@ -13,7 +13,7 @@ export declare class Rest {
     /** Sends a PATCH request to update player related data. */
     updatePlayer(options: playOptions): Promise<unknown>;
     /** Sends a DELETE request to the server to destroy the player. */
-    destroyPlayer(guildId: string): Promise<void>;
+    destroyPlayer(guildId: string): Promise<unknown>;
     get(path: RouteLike): Promise<unknown>;
     patch(endpoint: RouteLike, body: any): Promise<unknown>;
     post(endpoint: RouteLike, body: any): Promise<unknown>;
@@ -28,16 +28,9 @@ export interface playOptions {
         endTime?: number;
         volume?: number;
         position?: number;
-        paused?: Boolean;
-        filters?: Object;
+        paused?: boolean;
+        filters?: object;
         voice?: any;
     };
 }
 export type RouteLike = `/${string}`;
-export declare enum RequestMethod {
-    "Get" = "GET",
-    "Delete" = "DELETE",
-    "Post" = "POST",
-    "Patch" = "PATCH",
-    "Put" = "PUT"
-}

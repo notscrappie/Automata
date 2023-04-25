@@ -23,10 +23,10 @@ class Connection {
     /** Updates server information for the player's voice connection. */
     setServersUpdate({ endpoint, token }) {
         if (!endpoint)
-            throw new Error("NO Session id found");
+            throw new Error('NO Session id found');
         this.voice.endpoint = endpoint;
         this.voice.token = token;
-        this.region = endpoint.split(".").shift()?.replace(/[0-9]/g, "") ?? null;
+        this.region = endpoint.split('.').shift()?.replace(/[0-9]/g, '') ?? null;
         this.player.node.rest.updatePlayer({
             guildId: this.player.guildId,
             data: { voice: this.voice },

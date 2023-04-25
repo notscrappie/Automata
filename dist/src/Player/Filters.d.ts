@@ -1,4 +1,4 @@
-import { Player } from "./Player";
+import { Player } from './Player';
 export declare class Filters {
     player: Player;
     volume: number;

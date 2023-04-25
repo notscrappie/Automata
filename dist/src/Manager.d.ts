@@ -1,11 +1,11 @@
-/// <reference types="node" />
-import { Node } from "./Node/Node";
-import { Player } from "./Player/Player";
-import { EventEmitter } from "events";
-import { Response } from "./Guild/Response";
-import { Track } from "./Guild/Track";
+import { Response } from './Guild/Response';
+import { Player } from './Player/Player';
+import { Track } from './Guild/Track';
+import { EventEmitter } from 'events';
+import { Client } from 'discord.js';
+import { Node } from './Node/Node';
 export declare class Manager extends EventEmitter {
-    readonly client: any;
+    readonly client: Client;
     readonly _nodes: NodeOptions[];
     options: AutomataOptions;
     nodes: Map<string, Node>;
@@ -13,10 +13,10 @@ export declare class Manager extends EventEmitter {
     userId: string | null;
     version: string;
     isActivated: boolean;
-    send: Function | null;
-    constructor(client: any, nodes: NodeOptions[], options: AutomataOptions);
+    send: (_: unknown) => void;
+    constructor(client: Client, nodes: NodeOptions[], options: AutomataOptions);
     /** Initializes the manager. */
-    init(client: any): void;
+    init(client: Client): void;
     /** Adds a new node to the node pool. */
     addNode({ name, host, password, port }: NodeOptions): Node;
     /** Removes a node from the node pool. */
@@ -28,7 +28,7 @@ export declare class Manager extends EventEmitter {
     /** Creates a new player instance for the specified guild, and connects to the least used node based on the provided region or overall system load. */
     create(options: ConnectionOptions): Player;
     /** Sends packet updates. */
-    packetUpdate(packet: any): void;
+    packetUpdate(packet: VoicePacket): void;
     /** Creates a new player using the node and options provided by the create() function. */
     private createPlayer;
     /** Removes a connection. */
@@ -67,7 +67,7 @@ export interface ResolveOptions {
     /** The source that will be used to get the song from. */
     source?: SearchPlatform | string;
     /** The requester of the song. */
-    requester?: any;
+    requester?: unknown;
 }
 export interface AutomataOptions {
     /** The default platform used by the manager. Default platform is Deezer, by default. */
@@ -123,7 +123,7 @@ export interface AutomataEvents {
      * Emitted when a Lavalink node related error occurs.
      * @eventProperty
      */
-    nodeError: (node: Node, event: any) => void;
+    nodeError: (node?: Node, event?: unknown) => void;
     /**
      * Emitted when a player starts playing a new track.
      * @eventProperty
@@ -143,12 +143,12 @@ export interface AutomataEvents {
      * Emitted when a track gets stuck while it is playing.
      * @eventProperty
      */
-    playerError: (player: Player, track: Track, data: any) => void;
+    playerError: (player: Player, track: Track, data: unknown) => void;
     /**
      * Emitted when the connection between the WebSocket and Discord voice servers drops.
      * @eventProperty
      */
-    playerClose: (player: Player, track: Track, data: any) => void;
+    playerClose: (player: Player, track: Track, data: unknown) => void;
 }
 export declare interface Manager {
     on<K extends keyof AutomataEvents>(event: K, listener: AutomataEvents[K]): this;
@@ -156,3 +156,14 @@ export declare interface Manager {
     emit<K extends keyof AutomataEvents>(event: K, ...args: Parameters<AutomataEvents[K]>): boolean;
     off<K extends keyof AutomataEvents>(event: K, listener: AutomataEvents[K]): this;
 }
+interface VoicePacket {
+    op: number;
+    t: string;
+    d: {
+        guild_id: string;
+        user_id: string;
+        endpoint: string;
+        token: string;
+    };
+}
+export {};

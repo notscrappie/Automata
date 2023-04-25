@@ -1,12 +1,10 @@
-/// <reference types="node" />
-import { Manager, ResolveOptions, ConnectionOptions } from "../Manager";
-import { Node } from "../Node/Node";
-import { Track } from "../Guild/Track";
-import { Connection } from "./Connection";
-import Queue from "../Guild/Queue";
-import { EventEmitter } from "events";
-import { Filters } from "./Filters";
-import { Response } from "../Guild/Response";
+import { Manager, ResolveOptions, ConnectionOptions } from '../Manager';
+import { Node } from '../Node/Node';
+import { Track } from '../Guild/Track';
+import { Connection } from './Connection';
+import Queue from '../Guild/Queue';
+import { EventEmitter } from 'events';
+import { Filters } from './Filters';
 export declare class Player extends EventEmitter {
     readonly data: Record<string, unknown>;
     automata: Manager;
@@ -17,8 +15,6 @@ export declare class Player extends EventEmitter {
     guildId: string;
     voiceChannel: string;
     textChannel: string;
-    currentTrack: Track;
-    previousTrack: Track;
     isPlaying: boolean;
     isPaused: boolean;
     isConnected: boolean;
@@ -64,10 +60,19 @@ export declare class Player extends EventEmitter {
     /** Automatically moves the node. */
     AutoMoveNode(): void;
     /** Handles lavalink related events. */
-    eventHandler(data: any): boolean | Promise<void>;
+    eventHandler(data: EventInterface): boolean | Promise<void>;
     /** Resolves the provided query. */
-    resolve({ query, source, requester }: ResolveOptions): Promise<Response>;
+    resolve({ query, source, requester }: ResolveOptions): Promise<Track>;
     /** Sends the data to the Lavalink node the old fashioned way. */
     send(data: object): void;
 }
-export type Loop = "NONE" | "TRACK" | "QUEUE";
+interface EventInterface {
+    encodedTrack: string;
+    track: string;
+    guildId: string;
+    op: 'event';
+    code?: number;
+    type: 'TrackStartEvent' | 'TrackEndEvent' | 'TrackStuckEvent' | 'TrackExceptionEvent' | 'WebSocketClosedEvent';
+}
+export type Loop = 'NONE' | 'TRACK' | 'QUEUE';
+export {};

@@ -1,5 +1,5 @@
 {
-  "name": "@shadowrunners/automatadev",
+  "name": "@shadowrunners/automata",
   "version": "2.1.0",
   "description": "Automata is a fork of the Poru (by parasop) lavalink client developed and maintained by scrappie.",
   "main": "dist/index.js",
@@ -13,7 +13,8 @@
   },
   "scripts": {
     "build": "tsc && npm run build:esm",
-    "build:esm": "gen-esm-wrapper dist/index.js dist/index.mjs"
+    "build:esm": "gen-esm-wrapper dist/index.js dist/index.mjs",
+    "localdeploy": "npm run build && npm link"
   },
   "repository": {
     "type": "git",

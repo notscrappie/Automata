@@ -1,6 +1,6 @@
-import { Manager, AutomataOptions, NodeOptions } from "../Manager";
-import WebSocket from "ws";
-import { Rest } from "./Rest";
+import { Manager, AutomataOptions, NodeOptions } from '../Manager';
+import { WebSocket } from 'ws';
+import { Rest } from './Rest';
 export declare class Node {
     isConnected: boolean;
     automata: Manager;
@@ -18,7 +18,7 @@ export declare class Node {
     readonly autoResume: boolean;
     readonly reconnectTimeout: number;
     reconnectTries: number;
-    reconnectAttempt: any;
+    reconnectAttempt: ReturnType<typeof setTimeout>;
     attempt: number;
     stats: NodeStats | null;
     options: NodeOptions;
@@ -26,7 +26,7 @@ export declare class Node {
     /** Connects to the Lavalink server using the WebSocket. */
     connect(): void;
     /** Sends the payload to the Lavalink server. */
-    send(payload: any): Promise<void>;
+    send(payload: unknown): void;
     /** Reconnects the client to the Lavalink server. */
     reconnect(): void;
     /** Disconnects the client from the Lavalink server. */
@@ -43,12 +43,8 @@ export declare class Node {
     private close;
     /** Handles the 'error' event of the WebSocket connection. */
     private error;
-    /** Gets the route planner's current status. */
-    getRoutePlannerStatus(): Promise<any>;
-    /** Removes a failed address from the route planner's blacklist. */
-    unmarkFailedAddress(address: string): Promise<any>;
 }
-export interface NodeStats {
+interface NodeStats {
     players: number;
     playingPlayers: number;
     memory: {
@@ -69,3 +65,4 @@ export interface NodeStats {
     };
     uptime: number;
 }
+export {};

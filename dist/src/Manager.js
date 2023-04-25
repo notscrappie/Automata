@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Manager = void 0;
-const Node_1 = require("./Node/Node");
+const Response_1 = require("./Guild/Response");
 const Player_1 = require("./Player/Player");
 const events_1 = require("events");
-const Response_1 = require("./guild/Response");
+const Node_1 = require("./Node/Node");
 class Manager extends events_1.EventEmitter {
     client;
     _nodes;
@@ -23,7 +23,7 @@ class Manager extends events_1.EventEmitter {
         this.players = new Map();
         this.options = options;
         this.userId = null;
-        this.version = "v2.0";
+        this.version = 'v2.1';
         this.isActivated = false;
         this.send = null;
     }
@@ -36,7 +36,7 @@ class Manager extends events_1.EventEmitter {
             const guild = client.guilds.cache.get(packet.d.guild_id);
             guild?.shard?.send(packet);
         };
-        client.on("raw", (packet) => {
+        client.on('raw', (packet) => {
             this.packetUpdate(packet);
         });
         this.isActivated = true;
@@ -63,10 +63,10 @@ class Manager extends events_1.EventEmitter {
             .sort((a, b) => a.penalties - b.penalties);
     }
     /** Retrives a node. */
-    getNode(identifier = "auto") {
+    getNode(identifier = 'auto') {
         if (!this.nodes.size)
             throw new Error('There aren\'t any available nodes.');
-        if (identifier === "auto")
+        if (identifier === 'auto')
             return this.leastUsedNodes;
         const node = this.nodes.get(identifier);
         if (!node)
@@ -83,29 +83,29 @@ class Manager extends events_1.EventEmitter {
         if (player) {
             const node = this.nodes.get(this.leastUsedNodes[0].name);
             if (!node)
-                throw new Error("There aren\'t any nodes available.");
+                throw new Error('There aren\'t any nodes available.');
         }
         if (this.leastUsedNodes.length === 0)
-            throw new Error("There aren\'t any nodes available.");
-        const node = this.nodes.get(options.region
+            throw new Error('There aren\'t any nodes available.');
+        const foundNode = this.nodes.get(options.region
             ? this.leastUsedNodes.find((node) => node.regions.includes(options.region.toLowerCase()))?.name
             : this.leastUsedNodes[0].name);
-        if (!node)
-            throw new Error("There aren\'t any nodes available.");
-        return this.createPlayer(node, options);
+        if (!foundNode)
+            throw new Error('There aren\'t any nodes available.');
+        return this.createPlayer(foundNode, options);
     }
     /** Sends packet updates. */
     packetUpdate(packet) {
-        if (!["VOICE_STATE_UPDATE", "VOICE_SERVER_UPDATE"].includes(packet.t))
+        if (!['VOICE_STATE_UPDATE', 'VOICE_SERVER_UPDATE'].includes(packet.t))
             return;
         const player = this.players.get(packet.d.guild_id);
         if (!player)
             return;
         switch (packet.t) {
-            case "VOICE_SERVER_UPDATE":
+            case 'VOICE_SERVER_UPDATE':
                 player.connection.setServersUpdate(packet.d);
                 break;
-            case "VOICE_STATE_UPDATE":
+            case 'VOICE_STATE_UPDATE':
                 if (packet.d.user_id !== this.userId)
                     return;
                 player.connection.setStateUpdate(packet.d);
@@ -135,7 +135,7 @@ class Manager extends events_1.EventEmitter {
         if (!node)
             throw Error('There are no available nodes.');
         const regex = /^https?:\/\//;
-        const identifier = regex.test(query) ? query : `${source ?? "dzsearch"}:${query}`;
+        const identifier = regex.test(query) ? query : `${source ?? 'dzsearch'}:${query}`;
         const response = await node.rest.get(`/v3/loadtracks?identifier=${encodeURIComponent(identifier)}`);
         return new Response_1.Response(response, requester);
     }
@@ -147,17 +147,17 @@ class Manager extends events_1.EventEmitter {
     /** Sends a POST request to the Lavalink node to decode the provided tracks. */
     async decodeTracks(tracks, node) {
         const targetNode = node ?? this.leastUsedNodes[0];
-        return await targetNode.rest.post(`/v3/decodetracks`, tracks);
+        return await targetNode.rest.post('/v3/decodetracks', tracks);
     }
     /** Sends a GET request to the Lavalink node to get information regarding the node. */
     async getLavalinkInfo(name) {
-        let node = this.nodes.get(name);
-        return await node.rest.get(`/v3/info`);
+        const node = this.nodes.get(name);
+        return await node.rest.get('/v3/info');
     }
     /** Sends a GET request to the Lavalink node to get information regarding the status of the node. */
     async getLavalinkStatus(name) {
-        let node = this.nodes.get(name);
-        return await node.rest.get(`/v3/stats`);
+        const node = this.nodes.get(name);
+        return await node.rest.get('/v3/stats');
     }
     /** Retrieves the player from a server using the provided guildId of the specific server. */
     get(guildId) {

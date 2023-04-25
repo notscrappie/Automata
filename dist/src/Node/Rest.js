@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RequestMethod = exports.Rest = void 0;
+exports.Rest = void 0;
 const undici_1 = require("undici");
 class Rest {
     sessionId;
@@ -9,7 +9,7 @@ class Rest {
     automata;
     constructor(automata, node) {
         this.automata = automata;
-        this.url = `http${node.secure ? "s" : ""}://${node.options.host}:${node.options.port}`;
+        this.url = `http${node.secure ? 's' : ''}://${node.options.host}:${node.options.port}`;
         this.sessionId = node.sessionId;
         this.password = node.password;
     }
@@ -27,7 +27,7 @@ class Rest {
     }
     /** Sends a DELETE request to the server to destroy the player. */
     async destroyPlayer(guildId) {
-        await this.delete(`/v3/sessions/${this.sessionId}/players/${guildId}`);
+        return await this.delete(`/v3/sessions/${this.sessionId}/players/${guildId}`);
     }
     /* Sends a GET request to the specified endpoint and returns the response data. */
     async get(path) {
@@ -35,7 +35,7 @@ class Rest {
             const req = await (0, undici_1.fetch)(this.url + path, {
                 method: RequestMethod.Get,
                 headers: {
-                    "Content-Type": "application/json",
+                    'Content-Type': 'application/json',
                     Authorization: this.password,
                 },
             });
@@ -51,7 +51,7 @@ class Rest {
             const req = await (0, undici_1.fetch)(this.url + endpoint, {
                 method: RequestMethod.Patch,
                 headers: {
-                    "Content-Type": "application/json",
+                    'Content-Type': 'application/json',
                     Authorization: this.password,
                 },
                 body: JSON.stringify(body),
@@ -62,14 +62,13 @@ class Rest {
             return null;
         }
     }
-    ;
     /* Sends a POST request to the specified endpoint and returns the response data. */
     async post(endpoint, body) {
         try {
             const req = await (0, undici_1.fetch)(this.url + endpoint, {
                 method: RequestMethod.Post,
                 headers: {
-                    "Content-Type": "application/json",
+                    'Content-Type': 'application/json',
                     Authorization: this.password,
                 },
                 body: JSON.stringify(body),
@@ -86,7 +85,7 @@ class Rest {
             const req = await (0, undici_1.fetch)(this.url + endpoint, {
                 method: RequestMethod.Delete,
                 headers: {
-                    "Content-Type": "application/json",
+                    'Content-Type': 'application/json',
                     Authorization: this.password,
                 },
             });
@@ -98,6 +97,7 @@ class Rest {
     }
 }
 exports.Rest = Rest;
+// eslint-disable-next-line no-shadow
 var RequestMethod;
 (function (RequestMethod) {
     RequestMethod["Get"] = "GET";
@@ -105,5 +105,5 @@ var RequestMethod;
     RequestMethod["Post"] = "POST";
     RequestMethod["Patch"] = "PATCH";
     RequestMethod["Put"] = "PUT";
-})(RequestMethod = exports.RequestMethod || (exports.RequestMethod = {}));
+})(RequestMethod || (RequestMethod = {}));
 //# sourceMappingURL=Rest.js.map

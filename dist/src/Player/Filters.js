@@ -187,8 +187,8 @@ class Filters {
         this.player.node.rest.updatePlayer({
             guildId: this.player.guildId,
             data: {
-                filters: { equalizer, karaoke, timescale, vibrato, rotation, volume }
-            }
+                filters: { equalizer, karaoke, timescale, vibrato, rotation, volume },
+            },
         });
         return this;
     }

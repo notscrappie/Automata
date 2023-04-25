@@ -1,145 +1,141 @@
-import { Manager, ResolveOptions, ConnectionOptions } from "../Manager";
-import { Node } from "../Node/Node";
-import { Track } from "../guild/Track";
-import { Connection } from "./Connection";
-import Queue from "../guild/Queue";
-import { EventEmitter } from "events";
-import { Filters } from "./Filters";
-import { Response } from "../guild/Response";
+import { Manager, ResolveOptions, ConnectionOptions } from '../Manager';
+import { Node } from '../Node/Node';
+import { Track } from '../Guild/Track';
+import { Connection } from './Connection';
+import Queue from '../Guild/Queue';
+import { EventEmitter } from 'events';
+import { Filters } from './Filters';
+import { RouteLike } from '../Node/Rest';
 
 export class Player extends EventEmitter {
-  public readonly data: Record<string, unknown>;
-  public automata: Manager;
-  public node: Node;
-  public connection: Connection;
-  public queue: Queue;
-  public filters: Filters;
-  public guildId: string;
-  public voiceChannel: string;
-  public textChannel: string;
-  public currentTrack: Track;
-  public previousTrack: Track;
-  public isPlaying: boolean;
-  public isPaused: boolean;
-  public isConnected: boolean;
-  public loop: Loop;
-  public position: number;
-  public ping: number;
-  public timestamp: number;
-  public mute: boolean;
-  public deaf: boolean;
-  public volume: number;
+	public readonly data: Record<string, unknown>;
+	public automata: Manager;
+	public node: Node;
+	public connection: Connection;
+	public queue: Queue;
+	public filters: Filters;
+	public guildId: string;
+	public voiceChannel: string;
+	public textChannel: string;
+	public isPlaying: boolean;
+	public isPaused: boolean;
+	public isConnected: boolean;
+	public loop: Loop;
+	public position: number;
+	public ping: number;
+	public timestamp: number;
+	public mute: boolean;
+	public deaf: boolean;
+	public volume: number;
 
-  constructor(automata: Manager, node: Node, options: ConnectionOptions) {
-    super();
-    this.automata = automata;
-    this.node = node;
-    this.queue = new Queue();
-    this.connection = new Connection(this);
-    this.guildId = options.guildId;
-    this.filters = new Filters(this);
-    this.voiceChannel = options.voiceChannel;
-    this.textChannel = options.textChannel;
-    this.currentTrack = null;
-    this.previousTrack = null;
-    this.deaf = options.deaf ?? false;
-    this.mute = options.mute ?? false;
-    this.volume = 100;
-    this.isPlaying = false;
-    this.isPaused = false;
-    this.position = 0;
-    this.ping = 0;
-    this.timestamp = null;
-    this.isConnected = false;
-    this.loop = "NONE";
-    this.data = {};
+	constructor(automata: Manager, node: Node, options: ConnectionOptions) {
+		super();
+		this.automata = automata;
+		this.node = node;
+		this.queue = new Queue();
+		this.connection = new Connection(this);
+		this.guildId = options.guildId;
+		this.filters = new Filters(this);
+		this.voiceChannel = options.voiceChannel;
+		this.textChannel = options.textChannel;
+		this.deaf = options.deaf ?? false;
+		this.mute = options.mute ?? false;
+		this.volume = 100;
+		this.isPlaying = false;
+		this.isPaused = false;
+		this.position = 0;
+		this.ping = 0;
+		this.timestamp = null;
+		this.isConnected = false;
+		this.loop = 'NONE';
+		this.data = {};
 
-    this.on("playerUpdate", ({ state: { connected, position, ping, time }}) => {
-      this.isConnected = connected;
-      this.position = position;
-      this.ping = ping;
-      this.timestamp = time;
-    });
-    this.on("event", (data) => this.eventHandler(data));
-  }
+		this.on('playerUpdate', ({ state: { connected, position, ping, time } }) => {
+			this.isConnected = connected;
+			this.position = position;
+			this.ping = ping;
+			this.timestamp = time;
+		});
 
-  /** Sends a request to the server and plays the requested song. */
-  public async play() {
-    if (this.queue.length === 0) return;
-    const { track } = this.currentTrack = this.queue.shift();
+		this.on('event', ({ type }) => this.eventHandler(type));
+	}
 
-    if (!track) await this.currentTrack.resolve(this.automata);
+	/** Sends a request to the server and plays the requested song. */
+	public async play() {
+		if (this.queue.length === 0) return;
+		const { track } = this.queue.current = this.queue.shift();
 
-    this.isPlaying = true;
-    this.position = 0;
+		if (!track) await this.queue.current.resolve(this.automata);
 
-    this.node.rest.updatePlayer({
-      guildId: this.guildId,
-      data: {
-        encodedTrack: this.currentTrack.track,
-      },
-    });
-  }
+		Object.assign(this, { position: 0, isPlaying: true });
 
-  /** Connects to the user's voice channel. */
-  public connect(options: ConnectionOptions = this) {
-    const { guildId, voiceChannel, deaf, mute } = options;
+		this.node.rest.updatePlayer({
+			guildId: this.guildId,
+			data: {
+				encodedTrack: this.queue.current.track,
+			},
+		});
+	}
 
-    this.send({
-      guild_id: guildId,
-      channel_id: voiceChannel,
-      self_deaf: deaf ?? true,
-      self_mute: mute ?? false,
-    });
+	/** Connects to the user's voice channel. */
+	public connect(options: ConnectionOptions = this) {
+		this.send({
+			guild_id: options.guildId,
+			channel_id: options.voiceChannel,
+			self_deaf: options.deaf ?? true,
+			self_mute: options.mute ?? false,
+		});
 
-    this.isConnected = true;
-  }
+		this.isConnected = true;
+	}
 
-  /** Stops the player from playing. */
-  public stop() {
-    this.position = 0;
-    this.isPlaying = false;
+	/** Stops the player from playing. */
+	public stop() {
+		if (!this.isPlaying) return;
 
-    this.node.rest.updatePlayer({
-      guildId: this.guildId,
-      data: { encodedTrack: null },
-    });
+		this.position = 0;
+		this.isPlaying = false;
 
-    return this;
-  }
+		this.node.rest.updatePlayer({
+			guildId: this.guildId,
+			data: { encodedTrack: null },
+		});
 
-  /** Pauses the player. */
-  public pause(toggle: boolean) {
-    this.node.rest.updatePlayer({
-      guildId: this.guildId,
-      data: { paused: toggle },
-    });
+		return this;
+	}
 
-    this.isPlaying = !toggle;
-    this.isPaused = toggle;
+	/** Pauses the player. */
+	public pause(toggle: boolean) {
+		this.node.rest.updatePlayer({
+			guildId: this.guildId,
+			data: { paused: toggle },
+		});
 
-    return this;
-  }
+		this.isPlaying = !toggle;
+		this.isPaused = toggle;
 
-  /** Seeks the track. */
-  public seekTo(position: number): void {
-    const newPosition = Math.min(position + this.position, this.currentTrack.info.length);
-    this.node.rest.updatePlayer({ guildId: this.guildId, data: { position: newPosition } });
-  }
+		return this;
+	}
 
-  /** Sets the volume of the player. */
-  public setVolume(volume: number) {
-    if (volume < 0 || volume > 100) throw new RangeError('Volume must be between 1-100.');
+	/** Seeks the track. */
+	public seekTo(position: number): void {
+		const newPosition = Math.min(position + this.position, this.queue.current.length);
+		this.node.rest.updatePlayer({ guildId: this.guildId, data: { position: newPosition } });
+	}
 
-    this.node.rest.updatePlayer({ guildId: this.guildId, data: { volume } });
+	/** Sets the volume of the player. */
+	public setVolume(volume: number) {
+		if (volume < 0 || volume > 100) throw new RangeError('Volume must be between 1-100.');
 
-    this.volume = volume;
-    return this;
-  }
+		this.node.rest.updatePlayer({ guildId: this.guildId, data: { volume } });
 
-  /** Sets the current loop. */
-  public setLoop(mode: Loop) {
-    const validModes = new Set(['NONE', 'TRACK', 'QUEUE']);
+		this.volume = volume;
+		return this;
+	}
+
+	/** Sets the current loop. */
+	public setLoop(mode: Loop) {
+		const validModes = new Set(['NONE', 'TRACK', 'QUEUE']);
 		if (!validModes.has(mode))
 			throw new TypeError(
 				'setLoop only accepts NONE, TRACK and QUEUE as arguments.',
@@ -147,183 +143,197 @@ export class Player extends EventEmitter {
 
 		this.loop = mode;
 		return this;
-  }
+	}
 
-  /** Sets the text channel where event messages (trackStart, trackEnd etc.) will be sent. */
-  public setTextChannel(channel: string) {
-    this.textChannel = channel;
-    return this;
-  }
+	/** Sets the text channel where event messages (trackStart, trackEnd etc.) will be sent. */
+	public setTextChannel(channel: string) {
+		this.textChannel = channel;
+		return this;
+	}
 
-  /** Sets the voice channel. */
-  public setVoiceChannel(
-    channel: string,
-    options: { mute?: boolean; deaf?: boolean }
-  ) {
-    if (this.isConnected && channel == this.voiceChannel)
-      throw new ReferenceError(`Player is already connected to ${channel}`);
+	/** Sets the voice channel. */
+	public setVoiceChannel(
+		channel: string,
+		options: { mute?: boolean; deaf?: boolean },
+	) {
+		if (this.isConnected && channel == this.voiceChannel)
+			throw new ReferenceError(`Player is already connected to ${channel}`);
 
-    this.voiceChannel = channel;
-    
-    this.connect({
-      deaf: options.deaf ?? this.deaf,
-      guildId: this.guildId,
-      voiceChannel: this.voiceChannel,
-      textChannel: this.textChannel,
-      mute: options.mute ?? this.mute,
-    });
+		this.voiceChannel = channel;
 
-    return this;
-  }
+		this.connect({
+			deaf: options.deaf ?? this.deaf,
+			guildId: this.guildId,
+			voiceChannel: this.voiceChannel,
+			textChannel: this.textChannel,
+			mute: options.mute ?? this.mute,
+		});
 
-  public set(key: string, value: unknown) {
-    return (this.data[key] = value);
-  }
+		return this;
+	}
 
-  public get<K>(key: string): K {
-    return this.data[key] as K;
-  }
+	public set(key: string, value: unknown) {
+		return (this.data[key] = value);
+	}
 
-  /** Disconnects the player. */
-  public disconnect() {
-    if (!this.voiceChannel) return;
-    this.pause(true);
-    this.isConnected = false;
+	public get<K>(key: string): K {
+		return this.data[key] as K;
+	}
 
-    this.send({
-      guild_id: this.guildId,
-      channel_id: null,
-    });
+	/** Disconnects the player. */
+	public disconnect() {
+		if (!this.voiceChannel) return;
+		this.pause(true);
+		this.isConnected = false;
 
-    delete this.voiceChannel;
-    return this;
-  }
+		this.send({
+			guild_id: this.guildId,
+			channel_id: null,
+		});
 
-  /** Destroys the player. */
-  public destroy() {
-    this.disconnect();
-    this.node.rest.destroyPlayer(this.guildId);
-    this.automata.players.delete(this.guildId);
-  }
+		delete this.voiceChannel;
+		return this;
+	}
 
-  /** Restarts the player. */
-  public restart() {
-    if (!this.currentTrack?.track) {
-      if (this.queue.length) this.play();
-      return;
-    }
+	/** Destroys the player. */
+	public destroy() {
+		this.disconnect();
+		this.node.rest.destroyPlayer(this.guildId);
+		this.automata.players.delete(this.guildId);
+	}
 
-    this.node.rest.updatePlayer({
-      guildId: this.guildId,
-      data: {
-        position: this.position,
-        encodedTrack: this.currentTrack.track,
-      },
-    });
-  }
+	/** Restarts the player. */
+	public restart() {
+		if (!this.queue.current?.track) {
+			if (this.queue.length) this.play();
+			return;
+		}
 
-  /** Moves the player to another node. */
-  public moveNode(name: string) {
-    const node = this.automata.nodes.get(name);
-    if (!node || node.name === this.node.name) return;
-    if (!node.isConnected) throw new Error("The node provided is not available.");
+		this.node.rest.updatePlayer({
+			guildId: this.guildId,
+			data: {
+				position: this.position,
+				encodedTrack: this.queue.current.track,
+			},
+		});
+	}
 
-    this.node.rest.destroyPlayer(this.guildId);
-    this.automata.players.delete(this.guildId);
-    this.node = node;
-    this.automata.players.set(this.guildId, this);
-    this.restart();
-  }
+	/** Moves the player to another node. */
+	public moveNode(name: string) {
+		const node = this.automata.nodes.get(name);
+		if (!node || node.name === this.node.name) return;
+		if (!node.isConnected) throw new Error('The node provided is not available.');
 
-  /** Automatically moves the node. */
-  public AutoMoveNode() {
-    const [node] = this.automata.leastUsedNodes;
-    if (!node) throw new Error("There aren't any available nodes.");
-    if(!this.automata.nodes.has(node.name)) return this.destroy();
-    
-    this.moveNode(node.name);
-  }
+		this.node.rest.destroyPlayer(this.guildId);
+		this.automata.players.delete(this.guildId);
+		this.node = node;
+		this.automata.players.set(this.guildId, this);
+		this.restart();
+	}
 
-  /** Handles lavalink related events. */
-  public eventHandler(data: any) {
-    switch (data.type) {
-      case "TrackStartEvent": {
-        this.isPlaying = true;
-        this.automata.emit("playerStart", this, this.currentTrack);
-        break;
-      }
-      case "TrackEndEvent": {
-        this.previousTrack = this.currentTrack;
-        if (this.loop === "TRACK") {
-          this.queue.unshift(this.previousTrack);
-          this.automata.emit("playerEnd", this, this.currentTrack);
-          return this.play();
-        } else if (this.currentTrack && this.loop === "QUEUE") {
-          this.queue.push(this.previousTrack);
-          this.automata.emit("playerEnd", this, this.currentTrack, data);
-          return this.play();
-        }
+	/** Automatically moves the node. */
+	public AutoMoveNode() {
+		const [node] = this.automata.leastUsedNodes;
+		if (!node) throw new Error('There aren\'t any available nodes.');
+		if (!this.automata.nodes.has(node.name)) return this.destroy();
 
-        if (this.queue.length === 0) {
-          this.isPlaying = false;
-          return this.automata.emit("playerDisconnect", this);
-        } else if (this.queue.length > 0) {
-          this.automata.emit("playerEnd", this, this.currentTrack);
-          return this.play();
-        }
+		this.moveNode(node.name);
+	}
 
-        this.isPlaying = false;
-        this.automata.emit("playerDisconnect", this);
-        break;
-      }
+	/** Handles lavalink related events. */
+	public eventHandler(data: EventInterface) {
+		switch (data.type) {
+		case 'TrackStartEvent': {
+			this.isPlaying = true;
+			this.automata.emit('playerStart', this, this.queue.current);
+			break;
+		}
+		case 'TrackEndEvent': {
+			this.queue.previous = this.queue.current;
+			if (this.loop === 'TRACK') {
+				this.queue.unshift(this.queue.previous);
+				this.automata.emit('playerEnd', this, this.queue.current);
+				return this.play();
+			}
+			else if (this.queue.current && this.loop === 'QUEUE') {
+				this.queue.push(this.queue.previous);
+				this.automata.emit('playerEnd', this, this.queue.current, data);
+				return this.play();
+			}
 
-      case "TrackStuckEvent": {
-        this.automata.emit("playerError", this, this.currentTrack, data);
-        this.stop();
-        break;
-      }
-      case "TrackExceptionEvent": {
-        this.automata.emit("playerError", this, this.currentTrack, data);
-        this.stop();
-        break;
-      }
-      case "WebSocketClosedEvent": {
-        if ([4015, 4009].includes(data.code)) {
-          this.send({
-            guild_id: data.guildId,
-            channel_id: this.voiceChannel,
-            self_mute: this.mute,
-            self_deaf: this.deaf,
-          });
-        }
-        this.automata.emit("playerClose", this, this.currentTrack, data);
-        this.pause(true);
-        break;
-      }
-      default: {
-        throw new Error(`An unknown event: ${data}`);
-      }
-    }
-  }
+			if (this.queue.length === 0) {
+				this.isPlaying = false;
+				return this.automata.emit('playerDisconnect', this);
+			}
+			else if (this.queue.length > 0) {
+				this.automata.emit('playerEnd', this, this.queue.current);
+				return this.play();
+			}
 
-  /** Resolves the provided query. */
-  async resolve({ query, source, requester }: ResolveOptions) {
-    const regex = /^https?:\/\//;
-    let url: any;
+			this.isPlaying = false;
+			this.automata.emit('playerDisconnect', this);
+			break;
+		}
 
-    if (regex.test(query)) url = `/v3/loadtracks?identifier=${encodeURIComponent(query)}`;
-    else url = `/v3/loadtracks?identifier=${encodeURIComponent(
-      `${source || "dzsearch"}:${query}`
-    )}`;
-  
-    const response = await this.node.rest.get(url);
-    return new Response(response, requester);
-  }
+		case 'TrackStuckEvent': {
+			this.automata.emit('playerError', this, this.queue.current, data);
+			this.stop();
+			break;
+		}
+		case 'TrackExceptionEvent': {
+			this.automata.emit('playerError', this, this.queue.current, data);
+			this.stop();
+			break;
+		}
+		case 'WebSocketClosedEvent': {
+			if ([4015, 4009].includes(data.code)) {
+				this.send({
+					guild_id: data.guildId,
+					channel_id: this.voiceChannel,
+					self_mute: this.mute,
+					self_deaf: this.deaf,
+				});
+			}
+			this.automata.emit('playerClose', this, this.queue.current, data);
+			this.pause(true);
+			break;
+		}
+		default: break;
+		}
+	}
 
-  /** Sends the data to the Lavalink node the old fashioned way. */
-  public send(data: object) {
-    this.automata.send({ op: 4, d: data });
-  }
+	/** Resolves the provided query. */
+	async resolve({ query, source, requester }: ResolveOptions) {
+		const regex = /^https?:\/\//;
+		let url: RouteLike;
+
+		if (regex.test(query)) url = `/v3/loadtracks?identifier=${encodeURIComponent(query)}`;
+		else url = `/v3/loadtracks?identifier=${encodeURIComponent(
+			`${source || 'dzsearch'}:${query}`,
+		)}`;
+
+		const response = await this.node.rest.get(url);
+		return new Track(response, requester);
+	}
+
+	/** Sends the data to the Lavalink node the old fashioned way. */
+	public send(data: object) {
+		this.automata.send({ op: 4, d: data });
+	}
 }
 
-export type Loop = "NONE" | "TRACK" | "QUEUE";
+interface EventInterface {
+  encodedTrack: string;
+  track: string;
+  guildId: string;
+  op: 'event';
+  code?: number;
+  type:
+    | 'TrackStartEvent'
+    | 'TrackEndEvent'
+    | 'TrackStuckEvent'
+    | 'TrackExceptionEvent'
+    | 'WebSocketClosedEvent'
+}
+
+export type Loop = 'NONE' | 'TRACK' | 'QUEUE';
