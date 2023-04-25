@@ -37,7 +37,7 @@ export class Connection {
 	}
 
 	/** Updates the state of the player. */
-	setStateUpdate({ session_id, channel_id, self_deaf, self_mute }: VoiceState) {
+	setStateUpdate({ session_id, channel_id, self_deaf, self_mute }: any) {
 		if (
 			this.player.voiceChannel &&
       channel_id &&
@@ -48,13 +48,6 @@ export class Connection {
 		this.self_mute = self_mute ?? false;
 		this.voice.sessionId = session_id ?? null;
 	}
-}
-
-interface VoiceState {
-  session_id: string;
-  channel_id: string;
-  self_deaf: boolean;
-  self_mute: boolean;
 }
 
 interface IVoiceServer {
