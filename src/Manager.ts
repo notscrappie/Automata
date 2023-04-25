@@ -1,11 +1,12 @@
-import { Node } from "./Node/Node";
-import { Player } from "./Player/Player";
-import { EventEmitter } from "events";
-import { Response } from "./guild/Response";
-import { Track } from "./guild/Track";
+import { Response } from './Guild/Response';
+import { Player } from './Player/Player';
+import { Track } from './guild/Track';
+import { EventEmitter } from 'events';
+import { Client } from 'discord.js';
+import { Node } from './Node/Node';
 
 export class Manager extends EventEmitter {
-  public readonly client: any;
+  public readonly client: Client;
   public readonly _nodes: NodeOptions[];
 
   public options: AutomataOptions;
@@ -17,7 +18,7 @@ export class Manager extends EventEmitter {
   public isActivated: boolean;
   public send: Function | null;
 
-  constructor(client: any, nodes: NodeOptions[], options: AutomataOptions) {
+  constructor(client: Client, nodes: NodeOptions[], options: AutomataOptions) {
     super();
     this.client = client;
     this._nodes = nodes;
@@ -25,13 +26,13 @@ export class Manager extends EventEmitter {
     this.players = new Map();
     this.options = options;
     this.userId = null;
-    this.version = "v2.0";
+    this.version = "v2.1";
     this.isActivated = false;
     this.send = null;
   }
 
   /** Initializes the manager. */
-  public init(client: any) {
+  public init(client: Client) {
     this.userId = client.user.id;
     for (const node of this._nodes) this.addNode(node);
 
@@ -90,23 +91,23 @@ export class Manager extends EventEmitter {
     const player = this.players.get(options.guildId);
     if (player) {
       const node = this.nodes.get(this.leastUsedNodes[0].name);
-      if(!node) throw new Error("There aren\'t any nodes available.");
+      if(!node) throw new Error('There aren\'t any nodes available.');
     }
 
-    if (this.leastUsedNodes.length === 0) throw new Error("There aren\'t any nodes available.");
+    if (this.leastUsedNodes.length === 0) throw new Error('There aren\'t any nodes available.');
 
     const node = this.nodes.get(options.region
       ? this.leastUsedNodes.find((node) => node.regions.includes(options.region.toLowerCase()))?.name
       : this.leastUsedNodes[0].name);
 
-    if (!node) throw new Error("There aren\'t any nodes available.");
+    if (!node) throw new Error('There aren\'t any nodes available.');
 
     return this.createPlayer(node, options);
   }
 
   /** Sends packet updates. */
   public packetUpdate(packet: any) {
-    if (!["VOICE_STATE_UPDATE", "VOICE_SERVER_UPDATE"].includes(packet.t)) return;
+    if (!['VOICE_STATE_UPDATE", "VOICE_SERVER_UPDATE'].includes(packet.t)) return;
     const player = this.players.get(packet.d.guild_id);
     if (!player) return;
 
@@ -167,13 +168,13 @@ export class Manager extends EventEmitter {
 
   /** Sends a GET request to the Lavalink node to get information regarding the node. */
   async getLavalinkInfo(name: string) {
-    let node = this.nodes.get(name);
+    const node = this.nodes.get(name);
     return await node.rest.get(`/v3/info`);
   }
 
   /** Sends a GET request to the Lavalink node to get information regarding the status of the node. */
   async getLavalinkStatus(name: string) {
-    let node = this.nodes.get(name);
+    const node = this.nodes.get(name);
     return await node.rest.get(`/v3/stats`);
   }
 
