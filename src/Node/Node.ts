@@ -3,35 +3,35 @@ import { WebSocket } from 'ws';
 import { Rest } from './Rest';
 
 export class Node {
-	public readonly automata: Manager;
-	public readonly nodeOptions: NodeOptions;
-	public readonly restURL: string;
-	public readonly socketURL: string;
+	private readonly automata: Manager;
+	public readonly options: NodeOptions;
+	public restURL: string;
+	private socketURL: string;
 	public isConnected: boolean;
 	public readonly password: string;
-	public readonly secure: boolean;
+	public secure: boolean;
 	public readonly regions: Array<string>;
 	public sessionId: string | null;
 	public readonly rest: Rest;
-	public ws: WebSocket | null;
-	public readonly resumeKey: string | null;
-	public readonly resumeTimeout: number;
-	public readonly autoResume: boolean;
-	public readonly reconnectTimeout: number;
-	public readonly reconnectTries: number;
-	public reconnectAttempt: ReturnType<typeof setTimeout>;
-	public attempt: number;
+	private ws: WebSocket | null;
+	private readonly resumeKey: string | null;
+	private readonly resumeTimeout: number;
+	private readonly autoResume: boolean;
+	private readonly reconnectTimeout: number;
+	private readonly reconnectTries: number;
+	private reconnectAttempt: ReturnType<typeof setTimeout>;
+	private attempt: number;
 	public stats: NodeStats | null;
 
 	constructor(automata: Manager, node: NodeOptions, options: AutomataOptions) {
 		this.automata = automata;
-		this.nodeOptions = node;
+		this.options = node;
 		this.restURL = `http${node.secure ? 's' : ''}://${node.host}:${node.port}`;
 		this.socketURL = `${this.secure ? 'wss' : 'ws'}://${node.host}:${node.port}/`;
 		this.password = node.password || 'youshallnotpass';
 		this.secure = node.secure || false;
 		this.regions = node.region || null;
-		this.rest = new Rest();
+		this.rest = new Rest(this);
 		this.resumeKey = options.resumeKey || null;
 		this.resumeTimeout = options.resumeTimeout || 60;
 		this.reconnectTimeout = options.reconnectTimeout || 5000;
@@ -91,7 +91,7 @@ export class Node {
 		this.ws.close(1000, 'destroy');
 		this.ws = null;
 
-		this.automata.nodes.delete(this.nodeOptions.name);
+		this.automata.nodes.delete(this.options.name);
 		this.automata.emit('nodeDisconnect', this);
 	}
 
