@@ -6,7 +6,7 @@ export class Node {
 	private readonly automata: Manager;
 	public readonly options: NodeOptions;
 	public restURL: string;
-	private socketURL: string;
+	private readonly socketURL: string;
 	public isConnected: boolean;
 	public readonly password: string;
 	public secure: boolean;
