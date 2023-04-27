@@ -158,27 +158,30 @@ export class Manager extends EventEmitter {
 	/** Sends a GET request to the Lavalink node to decode the provided track. */
 	async decodeTrack(track: string, node?: Node): Promise<unknown> {
 		const targetNode = node ?? this.leastUsedNodes[0];
-		return targetNode.rest.get(
-			`/v3/decodetrack?encodedTrack=${encodeURIComponent(track)}`,
-		);
+		const request = await targetNode.rest.get(
+			`/v3/decodetrack?encodedTrack=${encodeURIComponent(track)}`);
+		return request;
 	}
 
 	/** Sends a POST request to the Lavalink node to decode the provided tracks. */
 	async decodeTracks(tracks: string[], node?: Node): Promise<unknown> {
 		const targetNode = node ?? this.leastUsedNodes[0];
-		return await targetNode.rest.post('/v3/decodetracks', tracks);
+		const request = await targetNode.rest.post('/v3/decodetracks', tracks);
+		return request;
 	}
 
 	/** Sends a GET request to the Lavalink node to get information regarding the node. */
-	async getLavalinkInfo(name: string) {
+	async getLavalinkInfo(name: string): Promise<unknown> {
 		const node = this.nodes.get(name);
-		return await node.rest.get('/v3/info');
+		const request = await node.rest.get('/v3/info');
+		return request;
 	}
 
 	/** Sends a GET request to the Lavalink node to get information regarding the status of the node. */
-	async getLavalinkStatus(name: string) {
+	async getLavalinkStatus(name: string): Promise<unknown> {
 		const node = this.nodes.get(name);
-		return await node.rest.get('/v3/stats');
+		const request = await node.rest.get('/v3/stats');
+		return request;
 	}
 
 	/** Retrieves the player from a server using the provided guildId of the specific server. */
