@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Manager = void 0;
-const Response_1 = require("./Guild/Response");
+const Track_1 = require("./Guild/Track");
+const Node_1 = require("./Node/Node");
 const Player_1 = require("./Player/Player");
 const events_1 = require("events");
-const Node_1 = require("./Node/Node");
 class Manager extends events_1.EventEmitter {
     client;
     _nodes;
@@ -15,17 +15,14 @@ class Manager extends events_1.EventEmitter {
     version;
     isActivated;
     send;
-    constructor(client, nodes, options) {
+    constructor(options) {
         super();
-        this.client = client;
-        this._nodes = nodes;
+        this._nodes = options.nodes;
         this.nodes = new Map();
         this.players = new Map();
         this.options = options;
-        this.userId = null;
         this.version = 'v2.1';
         this.isActivated = false;
-        this.send = null;
     }
     /** Initializes the manager. */
     init(client) {
@@ -45,7 +42,7 @@ class Manager extends events_1.EventEmitter {
     addNode({ name, host, password, port }) {
         const node = new Node_1.Node(this, { name, host, password, port }, this.options);
         this.nodes.set(name, node);
-        node?.connect?.();
+        node?.connect();
         return node;
     }
     /** Removes a node from the node pool. */
@@ -81,15 +78,15 @@ class Manager extends events_1.EventEmitter {
             throw new Error('Automata was not initialized in your ready event. Please initiate it by using the <AutomataManager>.init function.');
         const player = this.players.get(options.guildId);
         if (player) {
-            const node = this.nodes.get(this.leastUsedNodes[0].name);
+            const node = this.nodes.get(this.leastUsedNodes[0].options.name);
             if (!node)
                 throw new Error('There aren\'t any nodes available.');
         }
         if (this.leastUsedNodes.length === 0)
             throw new Error('There aren\'t any nodes available.');
         const foundNode = this.nodes.get(options.region
-            ? this.leastUsedNodes.find((node) => node.regions.includes(options.region.toLowerCase()))?.name
-            : this.leastUsedNodes[0].name);
+            ? this.leastUsedNodes.find((node) => node.regions.includes(options.region.toLowerCase()))?.options.name
+            : this.leastUsedNodes[0].options.name);
         if (!foundNode)
             throw new Error('There aren\'t any nodes available.');
         return this.createPlayer(foundNode, options);
@@ -136,28 +133,38 @@ class Manager extends events_1.EventEmitter {
             throw Error('There are no available nodes.');
         const regex = /^https?:\/\//;
         const identifier = regex.test(query) ? query : `${source ?? 'dzsearch'}:${query}`;
-        const response = await node.rest.get(`/v3/loadtracks?identifier=${encodeURIComponent(identifier)}`);
-        return new Response_1.Response(response, requester);
+        const res = await node.rest.get(`/v3/loadtracks?identifier=${encodeURIComponent(identifier)}`);
+        const mappedTracks = res.tracks.map((track) => new Track_1.AutomataTrack(track, requester)) || [];
+        const finalResult = {
+            loadType: res.loadType,
+            tracks: mappedTracks,
+            playlistInfo: res.playlistInfo || undefined,
+        };
+        return finalResult;
     }
     /** Sends a GET request to the Lavalink node to decode the provided track. */
-    decodeTrack(track, node) {
+    async decodeTrack(track, node) {
         const targetNode = node ?? this.leastUsedNodes[0];
-        return targetNode.rest.get(`/v3/decodetrack?encodedTrack=${encodeURIComponent(track)}`);
+        const request = await targetNode.rest.get(`/v3/decodetrack?encodedTrack=${encodeURIComponent(track)}`);
+        return request;
     }
     /** Sends a POST request to the Lavalink node to decode the provided tracks. */
     async decodeTracks(tracks, node) {
         const targetNode = node ?? this.leastUsedNodes[0];
-        return await targetNode.rest.post('/v3/decodetracks', tracks);
+        const request = await targetNode.rest.post('/v3/decodetracks', tracks);
+        return request;
     }
     /** Sends a GET request to the Lavalink node to get information regarding the node. */
     async getLavalinkInfo(name) {
         const node = this.nodes.get(name);
-        return await node.rest.get('/v3/info');
+        const request = await node.rest.get('/v3/info');
+        return request;
     }
     /** Sends a GET request to the Lavalink node to get information regarding the status of the node. */
     async getLavalinkStatus(name) {
         const node = this.nodes.get(name);
-        return await node.rest.get('/v3/stats');
+        const request = await node.rest.get('/v3/stats');
+        return request;
     }
     /** Retrieves the player from a server using the provided guildId of the specific server. */
     get(guildId) {

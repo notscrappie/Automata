@@ -1,9 +1,8 @@
-import { Response } from './Guild/Response';
+import { AutomataTrack } from './Guild/Track';
+import { Node, NodeOptions } from './Node/Node';
 import { Player } from './Player/Player';
-import { Track } from './Guild/Track';
 import { EventEmitter } from 'events';
 import { Client } from 'discord.js';
-import { Node } from './Node/Node';
 export declare class Manager extends EventEmitter {
     readonly client: Client;
     readonly _nodes: NodeOptions[];
@@ -14,7 +13,7 @@ export declare class Manager extends EventEmitter {
     version: string;
     isActivated: boolean;
     send: (_: unknown) => void;
-    constructor(client: Client, nodes: NodeOptions[], options: AutomataOptions);
+    constructor(options: AutomataOptions);
     /** Initializes the manager. */
     init(client: Client): void;
     /** Adds a new node to the node pool. */
@@ -24,17 +23,17 @@ export declare class Manager extends EventEmitter {
     /** Gets the least used nodes. */
     get leastUsedNodes(): Node[];
     /** Retrives a node. */
-    getNode(identifier?: string): Node | Node[];
+    getNode(identifier?: string): Node[] | Node;
     /** Creates a new player instance for the specified guild, and connects to the least used node based on the provided region or overall system load. */
     create(options: ConnectionOptions): Player;
     /** Sends packet updates. */
-    packetUpdate(packet: VoicePacket): void;
+    private packetUpdate;
     /** Creates a new player using the node and options provided by the create() function. */
     private createPlayer;
     /** Removes a connection. */
     removeConnection(guildId: string): void;
     /** Resolves the provided query. */
-    resolve({ query, source, requester }: ResolveOptions, node?: Node): Promise<Response>;
+    resolve({ query, source, requester }: ResolveOptions, node?: Node): Promise<ResolveResult>;
     /** Sends a GET request to the Lavalink node to decode the provided track. */
     decodeTrack(track: string, node?: Node): Promise<unknown>;
     /** Sends a POST request to the Lavalink node to decode the provided tracks. */
@@ -46,22 +45,18 @@ export declare class Manager extends EventEmitter {
     /** Retrieves the player from a server using the provided guildId of the specific server. */
     get(guildId: string): Player;
 }
-export interface NodeOptions {
-    /** Name of the node. */
+interface PlaylistInfo {
     name: string;
-    /** IP of the node. */
-    host: string;
-    /** Port of the node. */
-    port: number;
-    /** Password of the node. */
-    password: string;
-    /** Requires to be set as true when the node has SSL enabled. Otherwise, it can be left disabled. */
-    secure?: boolean;
-    /** Allows you to set this node to be used across specific regions. */
-    region?: string[];
+    selectedTrack?: number;
 }
-export type SearchPlatform = 'spsearch' | 'dzsearch' | 'scsearch';
-export interface ResolveOptions {
+interface ResolveResult {
+    loadType: LoadType;
+    tracks: AutomataTrack[];
+    playlistInfo?: PlaylistInfo;
+}
+type LoadType = 'TRACK_LOADED' | 'PLAYLIST_LOADED' | 'SEARCH_RESULT' | 'NO_MATCHES' | 'LOAD_FAILED';
+type SearchPlatform = 'spsearch' | 'dzsearch' | 'scsearch';
+interface ResolveOptions {
     /** The query provided by the user. */
     query: string;
     /** The source that will be used to get the song from. */
@@ -70,6 +65,8 @@ export interface ResolveOptions {
     requester?: unknown;
 }
 export interface AutomataOptions {
+    /** The nodes the player will use. */
+    nodes: NodeOptions[];
     /** The default platform used by the manager. Default platform is Deezer, by default. */
     defaultPlatform?: SearchPlatform | string;
     /** The time the manager will wait before trying to reconnect to a node. */
@@ -97,10 +94,9 @@ export interface ConnectionOptions {
 }
 export interface AutomataEvents {
     /**
-     *
-     * @param topic from what section the event come
+     * @param topic
      * @param args
-     * Emitted when a Response is come
+     * Provides access to raw WS events. Can be used to handle custom or unknown events.
      * @eventProperty
      */
     raw: (topic: string, ...args: unknown[]) => void;
@@ -128,42 +124,42 @@ export interface AutomataEvents {
      * Emitted when a player starts playing a new track.
      * @eventProperty
      */
-    playerStart: (player: Player, track: Track) => void;
+    trackStart: (player: Player, track: AutomataTrack) => void;
     /**
      * Emitted when the player finishes playing a track.
      * @eventProperty
      */
-    playerEnd: (player: Player, track: Track, LavalinkData?: unknown) => void;
+    trackEnd: (player: Player, track: AutomataTrack, LavalinkData?: unknown) => void;
     /**
-     * Emitted when the player disconnects from the Discord voice channel.
+     * Emitted when the player's queue has finished.
      * @eventProperty
      */
-    playerDisconnect: (player: Player) => void;
+    queueEnd: (player: Player) => void;
     /**
      * Emitted when a track gets stuck while it is playing.
      * @eventProperty
      */
-    playerError: (player: Player, track: Track, data: unknown) => void;
+    trackStuck: (player: Player, track: AutomataTrack, data: unknown) => void;
+    /**
+     * Emitted when the player gets updated.
+     * @eventProperty
+     */
+    playerUpdate: (player: Player) => void;
+    /**
+     * Emitted when a player gets destroyed.
+     * @eventProperty
+     */
+    playerDestroy: (player: Player) => void;
     /**
      * Emitted when the connection between the WebSocket and Discord voice servers drops.
      * @eventProperty
      */
-    playerClose: (player: Player, track: Track, data: unknown) => void;
+    socketClose: (player: Player, track: AutomataTrack, data: unknown) => void;
 }
 export declare interface Manager {
     on<K extends keyof AutomataEvents>(event: K, listener: AutomataEvents[K]): this;
     once<K extends keyof AutomataEvents>(event: K, listener: AutomataEvents[K]): this;
     emit<K extends keyof AutomataEvents>(event: K, ...args: Parameters<AutomataEvents[K]>): boolean;
     off<K extends keyof AutomataEvents>(event: K, listener: AutomataEvents[K]): this;
-}
-interface VoicePacket {
-    op: number;
-    t: string;
-    d: {
-        guild_id: string;
-        user_id: string;
-        endpoint: string;
-        token: string;
-    };
 }
 export {};

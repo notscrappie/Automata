@@ -2,13 +2,20 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Rest = void 0;
 const undici_1 = require("undici");
+// eslint-disable-next-line no-shadow
+var RequestMethod;
+(function (RequestMethod) {
+    RequestMethod["Get"] = "GET";
+    RequestMethod["Delete"] = "DELETE";
+    RequestMethod["Post"] = "POST";
+    RequestMethod["Patch"] = "PATCH";
+    RequestMethod["Put"] = "PUT";
+})(RequestMethod || (RequestMethod = {}));
 class Rest {
     sessionId;
     password;
     url;
-    automata;
-    constructor(automata, node) {
-        this.automata = automata;
+    constructor(node) {
         this.url = `http${node.secure ? 's' : ''}://${node.options.host}:${node.options.port}`;
         this.sessionId = node.sessionId;
         this.password = node.password;
@@ -23,11 +30,13 @@ class Rest {
     }
     /** Sends a PATCH request to update player related data. */
     async updatePlayer(options) {
-        return await this.patch(`/v3/sessions/${this.sessionId}/players/${options.guildId}/?noReplace=false`, options.data);
+        const request = await this.patch(`/v3/sessions/${this.sessionId}/players/${options.guildId}/?noReplace=false`, options.data);
+        return request;
     }
     /** Sends a DELETE request to the server to destroy the player. */
     async destroyPlayer(guildId) {
-        return await this.delete(`/v3/sessions/${this.sessionId}/players/${guildId}`);
+        const request = await this.delete(`/v3/sessions/${this.sessionId}/players/${guildId}`);
+        return request;
     }
     /* Sends a GET request to the specified endpoint and returns the response data. */
     async get(path) {
@@ -39,7 +48,8 @@ class Rest {
                     Authorization: this.password,
                 },
             });
-            return await req.json();
+            const json = await req.json();
+            return json;
         }
         catch (e) {
             return null;
@@ -56,7 +66,8 @@ class Rest {
                 },
                 body: JSON.stringify(body),
             });
-            return await req.json();
+            const json = await req.json();
+            return json;
         }
         catch (e) {
             return null;
@@ -73,7 +84,8 @@ class Rest {
                 },
                 body: JSON.stringify(body),
             });
-            return await req.json();
+            const json = await req.json();
+            return json;
         }
         catch (e) {
             return null;
@@ -89,7 +101,8 @@ class Rest {
                     Authorization: this.password,
                 },
             });
-            return await req.json();
+            const json = await req.json();
+            return json;
         }
         catch (e) {
             return null;
@@ -97,13 +110,4 @@ class Rest {
     }
 }
 exports.Rest = Rest;
-// eslint-disable-next-line no-shadow
-var RequestMethod;
-(function (RequestMethod) {
-    RequestMethod["Get"] = "GET";
-    RequestMethod["Delete"] = "DELETE";
-    RequestMethod["Post"] = "POST";
-    RequestMethod["Patch"] = "PATCH";
-    RequestMethod["Put"] = "PUT";
-})(RequestMethod || (RequestMethod = {}));
 //# sourceMappingURL=Rest.js.map

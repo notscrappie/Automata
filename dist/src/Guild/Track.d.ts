@@ -1,32 +1,31 @@
-import { Manager } from '../Manager';
-export declare class Track {
+export declare class AutomataTrack {
     track: string;
-    info: TrackInfo;
-    constructor({ track, info }: TrackData, requester?: unknown);
-    /** Resolves the track. */
-    resolve(automata: Manager): Promise<this>;
-    get identifier(): string;
-    get isSeekable(): boolean;
-    get author(): string;
-    get length(): number;
-    get isStream(): boolean;
-    get title(): string;
-    get uri(): string;
-    get sourceName(): string;
-    get requester(): unknown;
+    identifier: string;
+    author: string;
+    title: string;
+    length: number;
+    uri: string;
+    isSeekable: boolean;
+    isStream: boolean;
+    sourceName: string;
+    requester: unknown;
+    loadType: string;
+    constructor(data: TrackData, requester: unknown);
 }
-export interface TrackData {
+export interface TrackDataInfo {
     track?: string;
-    info?: TrackInfo;
-}
-export interface TrackInfo {
     identifier?: string;
-    isSeekable?: boolean;
     author?: string;
-    length?: number;
-    isStream?: boolean;
     title?: string;
+    length?: number;
     uri?: string;
+    isSeekable?: boolean;
+    isStream?: boolean;
     sourceName?: string;
     requester?: unknown;
+}
+export interface TrackData {
+    loadType?: string;
+    track?: string;
+    info: TrackDataInfo;
 }

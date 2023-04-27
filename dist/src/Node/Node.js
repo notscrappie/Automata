@@ -4,11 +4,11 @@ exports.Node = void 0;
 const ws_1 = require("ws");
 const Rest_1 = require("./Rest");
 class Node {
-    isConnected;
     automata;
-    name;
+    options;
     restURL;
     socketURL;
+    isConnected;
     password;
     secure;
     regions;
@@ -23,27 +23,19 @@ class Node {
     reconnectAttempt;
     attempt;
     stats;
-    options;
     constructor(automata, node, options) {
         this.automata = automata;
-        this.name = node.name;
         this.options = node;
         this.restURL = `http${node.secure ? 's' : ''}://${node.host}:${node.port}`;
         this.socketURL = `${this.secure ? 'wss' : 'ws'}://${node.host}:${node.port}/`;
         this.password = node.password || 'youshallnotpass';
         this.secure = node.secure || false;
         this.regions = node.region || null;
-        this.sessionId = null;
-        this.rest = new Rest_1.Rest(automata, this);
-        this.ws = null;
+        this.rest = new Rest_1.Rest(this);
         this.resumeKey = options.resumeKey || null;
         this.resumeTimeout = options.resumeTimeout || 60;
         this.reconnectTimeout = options.reconnectTimeout || 5000;
         this.reconnectTries = options.reconnectTries || 5;
-        this.reconnectAttempt = null;
-        this.attempt = 0;
-        this.isConnected = false;
-        this.stats = null;
     }
     /** Connects to the Lavalink server using the WebSocket. */
     connect() {
@@ -84,7 +76,7 @@ class Node {
         }, this.reconnectTimeout);
     }
     /** Disconnects the client from the Lavalink server. */
-    async disconnect() {
+    disconnect() {
         if (!this.isConnected)
             return;
         this.automata.players.forEach((player) => {
@@ -93,7 +85,7 @@ class Node {
         });
         this.ws.close(1000, 'destroy');
         this.ws = null;
-        this.automata.nodes.delete(this.name);
+        this.automata.nodes.delete(this.options.name);
         this.automata.emit('nodeDisconnect', this);
     }
     /** Returns the penalty of the current node based on its statistics. */

@@ -1,27 +1,25 @@
-import { Manager, AutomataOptions, NodeOptions } from '../Manager';
-import { WebSocket } from 'ws';
+import { Manager, AutomataOptions } from '../Manager';
 import { Rest } from './Rest';
 export declare class Node {
+    private readonly automata;
+    readonly options: NodeOptions;
+    restURL: string;
+    private readonly socketURL;
     isConnected: boolean;
-    automata: Manager;
-    readonly name: string;
-    readonly restURL: string;
-    readonly socketURL: string;
-    password: string;
-    readonly secure: boolean;
+    readonly password: string;
+    secure: boolean;
     readonly regions: Array<string>;
-    sessionId: string;
-    rest: Rest;
-    ws: WebSocket | null;
-    readonly resumeKey: string | null;
-    readonly resumeTimeout: number;
-    readonly autoResume: boolean;
-    readonly reconnectTimeout: number;
-    reconnectTries: number;
-    reconnectAttempt: ReturnType<typeof setTimeout>;
-    attempt: number;
+    sessionId: string | null;
+    readonly rest: Rest;
+    private ws;
+    private readonly resumeKey;
+    private readonly resumeTimeout;
+    private readonly autoResume;
+    private readonly reconnectTimeout;
+    private readonly reconnectTries;
+    private reconnectAttempt;
+    private attempt;
     stats: NodeStats | null;
-    options: NodeOptions;
     constructor(automata: Manager, node: NodeOptions, options: AutomataOptions);
     /** Connects to the Lavalink server using the WebSocket. */
     connect(): void;
@@ -30,7 +28,7 @@ export declare class Node {
     /** Reconnects the client to the Lavalink server. */
     reconnect(): void;
     /** Disconnects the client from the Lavalink server. */
-    disconnect(): Promise<void>;
+    disconnect(): void;
     /** Returns the penalty of the current node based on its statistics. */
     get penalties(): number;
     /** Handles the 'open' event of the WebSocket connection. */
@@ -43,6 +41,20 @@ export declare class Node {
     private close;
     /** Handles the 'error' event of the WebSocket connection. */
     private error;
+}
+export interface NodeOptions {
+    /** Name of the node. */
+    name: string;
+    /** IP of the node. */
+    host: string;
+    /** Port of the node. */
+    port: number;
+    /** Password of the node. */
+    password: string;
+    /** Requires to be set as true when the node has SSL enabled. Otherwise, it can be left disabled. */
+    secure?: boolean;
+    /** Allows you to set this node to be used across specific regions. */
+    region?: string[];
 }
 interface NodeStats {
     players: number;

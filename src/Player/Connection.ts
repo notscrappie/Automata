@@ -37,16 +37,13 @@ export class Connection {
 	}
 
 	/** Updates the state of the player. */
-	setStateUpdate({ session_id, channel_id, self_deaf, self_mute }: any) {
-		if (
-			this.player.voiceChannel &&
-      channel_id &&
-      this.player.voiceChannel !== channel_id
-		) this.player.voiceChannel = channel_id;
+	setStateUpdate(data: any) {
+		if (this.player.voiceChannel && data.channel_id && this.player.voiceChannel !== data.channel_id
+		) this.player.voiceChannel = data.channel_id;
 
-		this.self_deaf = self_deaf ?? true;
-		this.self_mute = self_mute ?? false;
-		this.voice.sessionId = session_id ?? null;
+		this.self_deaf = data.self_deaf ?? true;
+		this.self_mute = data.self_mute ?? false;
+		this.voice.sessionId = data.session_id ?? null;
 	}
 }
 

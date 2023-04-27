@@ -4,11 +4,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Player = void 0;
-const Track_1 = require("../Guild/Track");
 const Connection_1 = require("./Connection");
-const Queue_1 = __importDefault(require("../Guild/Queue"));
 const events_1 = require("events");
 const Filters_1 = require("./Filters");
+const Queue_1 = __importDefault(require("../Guild/Queue"));
 class Player extends events_1.EventEmitter {
     data;
     automata;
@@ -56,15 +55,23 @@ class Player extends events_1.EventEmitter {
             this.ping = ping;
             this.timestamp = time;
         });
-        this.on('event', ({ type }) => this.eventHandler(type));
+        this.on('event', (data) => this.eventHandler(data));
     }
     /** Sends a request to the server and plays the requested song. */
-    async play() {
+    play() {
         if (this.queue.length === 0)
             return;
-        const { track } = this.queue.current = this.queue.shift();
-        if (!track)
-            await this.queue.current.resolve(this.automata);
+        this.queue.current = this.queue.shift();
+        // Might be unnecessary, you never know.
+        // if (!track) {
+        //	const query = `${this.queue.current.author ?? ''} ${this.queue.current.title ?? ''}`.trim();
+        //	const resolvedTracks = await this.automata.resolve({
+        //		query,
+        //		source: this.automata.options.defaultPlatform || 'dzsearch',
+        //		requester: this.queue.current.requester,
+        //	});
+        //	return this.queue.current.track = resolvedTracks[0].track;
+        // }
         Object.assign(this, { position: 0, isPlaying: true });
         this.node.rest.updatePlayer({
             guildId: this.guildId,
@@ -103,7 +110,7 @@ class Player extends events_1.EventEmitter {
         });
         this.isPlaying = !toggle;
         this.isPaused = toggle;
-        return this;
+        return true;
     }
     /** Seeks the track. */
     seekTo(position) {
@@ -133,7 +140,7 @@ class Player extends events_1.EventEmitter {
     }
     /** Sets the voice channel. */
     setVoiceChannel(channel, options) {
-        if (this.isConnected && channel == this.voiceChannel)
+        if (this.isConnected && channel === this.voiceChannel)
             throw new ReferenceError(`Player is already connected to ${channel}`);
         this.voiceChannel = channel;
         this.connect({
@@ -188,7 +195,7 @@ class Player extends events_1.EventEmitter {
     /** Moves the player to another node. */
     moveNode(name) {
         const node = this.automata.nodes.get(name);
-        if (!node || node.name === this.node.name)
+        if (!node || node.options.name === this.node.options.name)
             return;
         if (!node.isConnected)
             throw new Error('The node provided is not available.');
@@ -203,49 +210,49 @@ class Player extends events_1.EventEmitter {
         const [node] = this.automata.leastUsedNodes;
         if (!node)
             throw new Error('There aren\'t any available nodes.');
-        if (!this.automata.nodes.has(node.name))
+        if (!this.automata.nodes.has(node.options.name))
             return this.destroy();
-        this.moveNode(node.name);
+        this.moveNode(node.options.name);
     }
     /** Handles lavalink related events. */
     eventHandler(data) {
         switch (data.type) {
             case 'TrackStartEvent': {
                 this.isPlaying = true;
-                this.automata.emit('playerStart', this, this.queue.current);
+                this.automata.emit('trackStart', this, this.queue.current);
                 break;
             }
             case 'TrackEndEvent': {
                 this.queue.previous = this.queue.current;
                 if (this.loop === 'TRACK') {
                     this.queue.unshift(this.queue.previous);
-                    this.automata.emit('playerEnd', this, this.queue.current);
+                    this.automata.emit('trackEnd', this, this.queue.current);
                     return this.play();
                 }
                 else if (this.queue.current && this.loop === 'QUEUE') {
                     this.queue.push(this.queue.previous);
-                    this.automata.emit('playerEnd', this, this.queue.current, data);
+                    this.automata.emit('trackEnd', this, this.queue.current, data);
                     return this.play();
                 }
                 if (this.queue.length === 0) {
                     this.isPlaying = false;
-                    return this.automata.emit('playerDisconnect', this);
+                    return this.automata.emit('queueEnd', this);
                 }
                 else if (this.queue.length > 0) {
-                    this.automata.emit('playerEnd', this, this.queue.current);
+                    this.automata.emit('trackEnd', this, this.queue.current);
                     return this.play();
                 }
                 this.isPlaying = false;
-                this.automata.emit('playerDisconnect', this);
+                this.automata.emit('queueEnd', this);
                 break;
             }
             case 'TrackStuckEvent': {
-                this.automata.emit('playerError', this, this.queue.current, data);
+                this.automata.emit('trackStuck', this, this.queue.current, data);
                 this.stop();
                 break;
             }
             case 'TrackExceptionEvent': {
-                this.automata.emit('playerError', this, this.queue.current, data);
+                this.automata.emit('trackStuck', this, this.queue.current, data);
                 this.stop();
                 break;
             }
@@ -258,23 +265,12 @@ class Player extends events_1.EventEmitter {
                         self_deaf: this.deaf,
                     });
                 }
-                this.automata.emit('playerClose', this, this.queue.current, data);
+                this.automata.emit('socketClose', this, this.queue.current, data);
                 this.pause(true);
                 break;
             }
             default: break;
         }
-    }
-    /** Resolves the provided query. */
-    async resolve({ query, source, requester }) {
-        const regex = /^https?:\/\//;
-        let url;
-        if (regex.test(query))
-            url = `/v3/loadtracks?identifier=${encodeURIComponent(query)}`;
-        else
-            url = `/v3/loadtracks?identifier=${encodeURIComponent(`${source || 'dzsearch'}:${query}`)}`;
-        const response = await this.node.rest.get(url);
-        return new Track_1.Track(response, requester);
     }
     /** Sends the data to the Lavalink node the old fashioned way. */
     send(data) {

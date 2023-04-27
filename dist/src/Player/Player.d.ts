@@ -1,10 +1,9 @@
-import { Manager, ResolveOptions, ConnectionOptions } from '../Manager';
-import { Node } from '../Node/Node';
-import { Track } from '../Guild/Track';
+import { Manager, ConnectionOptions } from '../Manager';
 import { Connection } from './Connection';
-import Queue from '../Guild/Queue';
 import { EventEmitter } from 'events';
 import { Filters } from './Filters';
+import { Node } from '../Node/Node';
+import Queue from '../Guild/Queue';
 export declare class Player extends EventEmitter {
     readonly data: Record<string, unknown>;
     automata: Manager;
@@ -27,13 +26,13 @@ export declare class Player extends EventEmitter {
     volume: number;
     constructor(automata: Manager, node: Node, options: ConnectionOptions);
     /** Sends a request to the server and plays the requested song. */
-    play(): Promise<void>;
+    play(): void;
     /** Connects to the user's voice channel. */
     connect(options?: ConnectionOptions): void;
     /** Stops the player from playing. */
     stop(): this;
     /** Pauses the player. */
-    pause(toggle: boolean): this;
+    pause(toggle: boolean): boolean;
     /** Seeks the track. */
     seekTo(position: number): void;
     /** Sets the volume of the player. */
@@ -60,14 +59,11 @@ export declare class Player extends EventEmitter {
     /** Automatically moves the node. */
     AutoMoveNode(): void;
     /** Handles lavalink related events. */
-    eventHandler(data: EventInterface): boolean | Promise<void>;
-    /** Resolves the provided query. */
-    resolve({ query, source, requester }: ResolveOptions): Promise<Track>;
+    eventHandler(data: EventInterface): boolean | void;
     /** Sends the data to the Lavalink node the old fashioned way. */
     send(data: object): void;
 }
 interface EventInterface {
-    encodedTrack: string;
     track: string;
     guildId: string;
     op: 'event';
