@@ -1,15 +1,20 @@
 import { Node } from './Node';
 import { fetch } from 'undici';
-import { Manager } from '../Manager';
+
+enum RequestMethod {
+	'Get' = 'GET',
+	'Delete' = 'DELETE',
+	'Post' = 'POST',
+	'Patch' = 'PATCH',
+	'Put' = 'PUT',
+  }
 
 export class Rest {
 	private sessionId: string;
-	private password: string;
-	public url: string;
-	public automata: Manager;
+	private readonly password: string;
+	private readonly url: string;
 
-	constructor(automata: Manager, node: Node) {
-		this.automata = automata;
+	constructor(node: Node) {
 		this.url = `http${node.secure ? 's' : ''}://${node.options.host}:${
 			node.options.port
 		}`;
@@ -23,12 +28,12 @@ export class Rest {
 	}
 
 	/** Retrieves all the players that are currently running on the node. */
-	getAllPlayers() {
+	public getAllPlayers() {
 		return this.get(`/v3/sessions/${this.sessionId}/players`);
 	}
 
 	/** Sends a PATCH request to update player related data. */
-	public async updatePlayer(options: playOptions) {
+	public async updatePlayer(options: playOptions): Promise<unknown> {
 		return await this.patch(`/v3/sessions/${this.sessionId}/players/${options.guildId}/?noReplace=false`, options.data);
 	}
 
@@ -126,13 +131,6 @@ export interface playOptions {
   };
 }
 
-export type RouteLike = `/${string}`;
+type RouteLike = `/${string}`;
 
-// eslint-disable-next-line no-shadow
-enum RequestMethod {
-  'Get' = 'GET',
-  'Delete' = 'DELETE',
-  'Post' = 'POST',
-  'Patch' = 'PATCH',
-  'Put' = 'PUT',
-}
+
