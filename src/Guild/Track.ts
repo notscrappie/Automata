@@ -1,81 +1,45 @@
-import { Manager } from '../Manager';
-
-export class Track {
+export class AutomataTrack {
 	public track: string;
-	public info: TrackInfo;
+	public identifier: string;
+	public author: string;
+	public title: string;
+	public length: number;
+	public uri: string;
+	public isSeekable: boolean;
+	public isStream: boolean;
+	public sourceName: string;
+	public requester: unknown;
+	public loadType: string;
 
-	constructor({ track, info }: TrackData, requester?: unknown) {
-		this.track = track;
-		this.info = { ...info, requester };
+	constructor(data: TrackData, requester: unknown) {
+		this.track = data.track;
+		this.identifier = data.info.identifier;
+		this.author = data.info.author;
+		this.title = data.info.title;
+		this.length = data.info.length;
+		this.uri = data.info.uri;
+		this.isSeekable = data.info.isSeekable;
+		this.isStream = data.info.isStream;
+		this.sourceName = data.info.sourceName;
+		this.requester = requester;
 	}
+}
 
-	/** Resolves the track. */
-	public async resolve(automata: Manager) {
-		const query = `${this.info.author ?? ''} ${this.info.title ?? ''}`.trim();
-		const result = await automata.resolve({
-			query,
-			source: automata.options.defaultPlatform || 'dzsearch',
-			requester: this.info.requester,
-		});
-
-		const trackToUse = result.tracks[0];
-
-		if (trackToUse) {
-			this.info.identifier = trackToUse?.info?.identifier;
-			this.track = trackToUse?.track;
-		}
-
-		return this;
-	}
-
-	public get identifier(): string {
-		return this.info.identifier;
-	}
-
-	public get isSeekable(): boolean {
-		return this.info.isSeekable;
-	}
-
-	public get author(): string {
-		return this.info.author;
-	}
-
-	public get length(): number {
-		return this.info.length;
-	}
-
-	public get isStream(): boolean {
-		return this.info.isStream;
-	}
-	public get title(): string {
-		return this.info.title;
-	}
-	public get uri(): string {
-		return this.info.uri;
-	}
-
-	public get sourceName(): string {
-		return this.info.sourceName;
-	}
-
-	public get requester(): unknown {
-		return this.info.requester;
-	}
+export interface TrackDataInfo {
+	track?: string;
+	identifier?: string;
+	author?: string;
+	title?: string;
+	length?: number;
+	uri?: string;
+	isSeekable?: boolean;
+	isStream?: boolean;
+	sourceName?: string;
+	requester?: unknown;
 }
 
 export interface TrackData {
-  track?: string;
-  info?: TrackInfo;
-}
-
-export interface TrackInfo {
-  identifier?: string;
-  isSeekable?: boolean;
-  author?: string;
-  length?: number;
-  isStream?: boolean;
-  title?: string;
-  uri?: string;
-  sourceName?: string;
-  requester?: unknown;
+	loadType?: string;
+	track?: string;
+	info: TrackDataInfo;
 }

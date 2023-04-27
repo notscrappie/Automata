@@ -1,6 +1,6 @@
-import { Track } from './Track';
+import { AutomataTrack } from './Track';
 
-export default class Queue extends Array<Track> {
+export default class Queue extends Array<AutomataTrack> {
 	/** Gets the size of the queue. */
 	public get size(): number {
 		return this.length;
@@ -12,16 +12,16 @@ export default class Queue extends Array<Track> {
 	}
 
 	/** Adds a new track to the queue. */
-	public add(track: Track): Queue {
+	public add(track: AutomataTrack): Queue {
 		this.push(track);
 		return this;
 	}
 
 	/** The current track. */
-	public current: Track | null = null;
+	public current: AutomataTrack | null = null;
 
 	/** The previous track. */
-	public previous: Track | null = null;
+	public previous: AutomataTrack | null = null;
 
 	/** Removes a track from the queue. */
 	public remove(index: number) {
