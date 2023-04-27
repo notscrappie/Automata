@@ -165,7 +165,7 @@ export class Player extends EventEmitter {
 		channel: string,
 		options: { mute?: boolean; deaf?: boolean },
 	) {
-		if (this.isConnected && channel == this.voiceChannel)
+		if (this.isConnected && channel === this.voiceChannel)
 			throw new ReferenceError(`Player is already connected to ${channel}`);
 
 		this.voiceChannel = channel;

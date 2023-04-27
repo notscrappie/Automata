@@ -28,7 +28,6 @@ export class Filters {
 
 	/** Applies the bass boost filter. */
 	public bassBoost(): Filters {
-		const { setEqualizer } = this;
 		const equalizer = [
 			{ bands: 0, gain: 0.65 },
 			{ bands: 1, gain: 0.45 },
@@ -46,39 +45,33 @@ export class Filters {
 			{ bands: 13, gain: 0 },
 		];
 
-		setEqualizer(equalizer);
-		return this;
+		return this.setEqualizer(equalizer);
 	}
 
 	/** Applies the nightcore filter. */
 	public nightcore(): Filters {
-		const { setTimescale } = this;
 		const timescale: timescaleOptions = {
 			speed: 1.1,
 			pitch: 1.125,
 			rate: 1.05,
 		};
 
-		setTimescale(timescale);
-		return this;
+		return this.setTimescale(timescale);
 	}
 
 	/** Applies the slow motion filter. */
 	public slowmo(): Filters {
-		const { setTimescale } = this;
 		const timescale: timescaleOptions = {
 			speed: 0.5,
 			pitch: 1.0,
 			rate: 0.8,
 		};
 
-		setTimescale(timescale);
-		return this;
+		return this.setTimescale(timescale);
 	}
 
 	/** Applies the soft filter. */
 	public soft(): Filters {
-		const { setEqualizer } = this;
 		const equalizer: Band[] = [
 			{ bands: 0, gain: 0 },
 			{ bands: 1, gain: 0 },
@@ -96,13 +89,11 @@ export class Filters {
 			{ bands: 13, gain: -0.25 },
 		];
 
-		setEqualizer(equalizer);
-		return this;
+		return this.setEqualizer(equalizer);
 	}
 
 	/** Applies the tv filter. */
 	public tv(): Filters {
-		const { setEqualizer } = this;
 		const equalizer: Band[] = [
 			{ bands: 0, gain: 0 },
 			{ bands: 1, gain: 0 },
@@ -120,13 +111,11 @@ export class Filters {
 			{ bands: 13, gain: 0.65 },
 		];
 
-		setEqualizer(equalizer);
-		return this;
+		return this.setEqualizer(equalizer);
 	}
 
 	/** Applies the treble bass filter. */
 	public trebleBass(): Filters {
-		const { setEqualizer } = this;
 		const equalizer: Band[] = [
 			{ bands: 0, gain: 0.6 },
 			{ bands: 1, gain: 0.67 },
@@ -144,14 +133,11 @@ export class Filters {
 			{ bands: 13, gain: 0 },
 		];
 
-		setEqualizer(equalizer);
-		return this;
+		return this.setEqualizer(equalizer);
 	}
 
 	/** Applies the vaporwave filter. */
 	public vaporwave(): Filters {
-		const { setEqualizer, setTimescale } = this;
-
 		const equalizer = [
 			{ bands: 0, gain: 0 },
 			{ bands: 1, gain: 0 },
@@ -169,9 +155,8 @@ export class Filters {
 			{ bands: 13, gain: 0.15 },
 		];
 
-		setEqualizer(equalizer);
-		setTimescale({ pitch: 0.55 });
-		return this;
+		this.setEqualizer(equalizer);
+		return this.setTimescale({ pitch: 0.55 });
 	}
 
 	public setKaraoke(karaoke?: karaokeOptions): Filters {
