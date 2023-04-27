@@ -1,11 +1,9 @@
-import { Manager, ResolveOptions, ConnectionOptions } from '../Manager';
-import { Node } from '../Node/Node';
-import { Track } from '../Guild/Track';
+import { Manager, ConnectionOptions } from '../Manager';
 import { Connection } from './Connection';
-import Queue from '../Guild/Queue';
 import { EventEmitter } from 'events';
 import { Filters } from './Filters';
-import { RouteLike } from '../Node/Rest';
+import { Node } from '../Node/Node';
+import Queue from '../Guild/Queue';
 
 export class Player extends EventEmitter {
 	public readonly data: Record<string, unknown>;
@@ -57,15 +55,26 @@ export class Player extends EventEmitter {
 			this.timestamp = time;
 		});
 
-		this.on('event', ({ type }) => this.eventHandler(type));
+		this.on('event', (data) => this.eventHandler(data));
 	}
 
 	/** Sends a request to the server and plays the requested song. */
 	public async play() {
 		if (this.queue.length === 0) return;
-		const { track } = this.queue.current = this.queue.shift();
+		this.queue.current = this.queue.shift();
 
-		if (!track) await this.queue.current.resolve(this.automata);
+		// Might be unnecessary, you never know.
+		// if (!track) {
+		//	const query = `${this.queue.current.author ?? ''} ${this.queue.current.title ?? ''}`.trim();
+
+		//	const resolvedTracks = await this.automata.resolve({
+		//		query,
+		//		source: this.automata.options.defaultPlatform || 'dzsearch',
+		//		requester: this.queue.current.requester,
+		//	});
+
+		//	return this.queue.current.track = resolvedTracks[0].track;
+		// }
 
 		Object.assign(this, { position: 0, isPlaying: true });
 
@@ -105,7 +114,7 @@ export class Player extends EventEmitter {
 	}
 
 	/** Pauses the player. */
-	public pause(toggle: boolean) {
+	public pause(toggle: boolean): boolean {
 		this.node.rest.updatePlayer({
 			guildId: this.guildId,
 			data: { paused: toggle },
@@ -114,7 +123,7 @@ export class Player extends EventEmitter {
 		this.isPlaying = !toggle;
 		this.isPaused = toggle;
 
-		return this;
+		return true;
 	}
 
 	/** Seeks the track. */
@@ -221,7 +230,7 @@ export class Player extends EventEmitter {
 	/** Moves the player to another node. */
 	public moveNode(name: string) {
 		const node = this.automata.nodes.get(name);
-		if (!node || node.name === this.node.name) return;
+		if (!node || node.options.name === this.node.options.name) return;
 		if (!node.isConnected) throw new Error('The node provided is not available.');
 
 		this.node.rest.destroyPlayer(this.guildId);
@@ -235,9 +244,9 @@ export class Player extends EventEmitter {
 	public AutoMoveNode() {
 		const [node] = this.automata.leastUsedNodes;
 		if (!node) throw new Error('There aren\'t any available nodes.');
-		if (!this.automata.nodes.has(node.name)) return this.destroy();
+		if (!this.automata.nodes.has(node.options.name)) return this.destroy();
 
-		this.moveNode(node.name);
+		this.moveNode(node.options.name);
 	}
 
 	/** Handles lavalink related events. */
@@ -245,43 +254,43 @@ export class Player extends EventEmitter {
 		switch (data.type) {
 		case 'TrackStartEvent': {
 			this.isPlaying = true;
-			this.automata.emit('playerStart', this, this.queue.current);
+			this.automata.emit('trackStart', this, this.queue.current);
 			break;
 		}
 		case 'TrackEndEvent': {
 			this.queue.previous = this.queue.current;
 			if (this.loop === 'TRACK') {
 				this.queue.unshift(this.queue.previous);
-				this.automata.emit('playerEnd', this, this.queue.current);
+				this.automata.emit('trackEnd', this, this.queue.current);
 				return this.play();
 			}
 			else if (this.queue.current && this.loop === 'QUEUE') {
 				this.queue.push(this.queue.previous);
-				this.automata.emit('playerEnd', this, this.queue.current, data);
+				this.automata.emit('trackEnd', this, this.queue.current, data);
 				return this.play();
 			}
 
 			if (this.queue.length === 0) {
 				this.isPlaying = false;
-				return this.automata.emit('playerDisconnect', this);
+				return this.automata.emit('queueEnd', this);
 			}
 			else if (this.queue.length > 0) {
-				this.automata.emit('playerEnd', this, this.queue.current);
+				this.automata.emit('trackEnd', this, this.queue.current);
 				return this.play();
 			}
 
 			this.isPlaying = false;
-			this.automata.emit('playerDisconnect', this);
+			this.automata.emit('queueEnd', this);
 			break;
 		}
 
 		case 'TrackStuckEvent': {
-			this.automata.emit('playerError', this, this.queue.current, data);
+			this.automata.emit('trackStuck', this, this.queue.current, data);
 			this.stop();
 			break;
 		}
 		case 'TrackExceptionEvent': {
-			this.automata.emit('playerError', this, this.queue.current, data);
+			this.automata.emit('trackStuck', this, this.queue.current, data);
 			this.stop();
 			break;
 		}
@@ -294,26 +303,12 @@ export class Player extends EventEmitter {
 					self_deaf: this.deaf,
 				});
 			}
-			this.automata.emit('playerClose', this, this.queue.current, data);
+			this.automata.emit('socketClose', this, this.queue.current, data);
 			this.pause(true);
 			break;
 		}
 		default: break;
 		}
-	}
-
-	/** Resolves the provided query. */
-	async resolve({ query, source, requester }: ResolveOptions) {
-		const regex = /^https?:\/\//;
-		let url: RouteLike;
-
-		if (regex.test(query)) url = `/v3/loadtracks?identifier=${encodeURIComponent(query)}`;
-		else url = `/v3/loadtracks?identifier=${encodeURIComponent(
-			`${source || 'dzsearch'}:${query}`,
-		)}`;
-
-		const response = await this.node.rest.get(url);
-		return new Track(response, requester);
 	}
 
 	/** Sends the data to the Lavalink node the old fashioned way. */
@@ -323,7 +318,6 @@ export class Player extends EventEmitter {
 }
 
 interface EventInterface {
-  encodedTrack: string;
   track: string;
   guildId: string;
   op: 'event';
