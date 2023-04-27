@@ -59,7 +59,7 @@ export class Player extends EventEmitter {
 	}
 
 	/** Sends a request to the server and plays the requested song. */
-	public async play() {
+	public play() {
 		if (this.queue.length === 0) return;
 		this.queue.current = this.queue.shift();
 
