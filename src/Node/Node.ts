@@ -1,49 +1,41 @@
-import { Manager, AutomataOptions, NodeOptions } from '../Manager';
+import { Manager, AutomataOptions } from '../Manager';
 import { WebSocket } from 'ws';
 import { Rest } from './Rest';
 
 export class Node {
-	public isConnected: boolean;
-	public automata: Manager;
-	public readonly name: string;
+	public readonly automata: Manager;
+	public readonly nodeOptions: NodeOptions;
 	public readonly restURL: string;
 	public readonly socketURL: string;
-	public password: string;
+	public isConnected: boolean;
+	public readonly password: string;
 	public readonly secure: boolean;
 	public readonly regions: Array<string>;
-	public sessionId: string;
-	public rest: Rest;
+	public sessionId: string | null;
+	public readonly rest: Rest;
 	public ws: WebSocket | null;
 	public readonly resumeKey: string | null;
 	public readonly resumeTimeout: number;
 	public readonly autoResume: boolean;
 	public readonly reconnectTimeout: number;
-	public reconnectTries: number;
+	public readonly reconnectTries: number;
 	public reconnectAttempt: ReturnType<typeof setTimeout>;
 	public attempt: number;
 	public stats: NodeStats | null;
-	public options: NodeOptions;
 
 	constructor(automata: Manager, node: NodeOptions, options: AutomataOptions) {
 		this.automata = automata;
-		this.name = node.name;
-		this.options = node;
+		this.nodeOptions = node;
 		this.restURL = `http${node.secure ? 's' : ''}://${node.host}:${node.port}`;
 		this.socketURL = `${this.secure ? 'wss' : 'ws'}://${node.host}:${node.port}/`;
 		this.password = node.password || 'youshallnotpass';
 		this.secure = node.secure || false;
 		this.regions = node.region || null;
-		this.sessionId = null;
-		this.rest = new Rest(automata, this);
-		this.ws = null;
+		this.rest = new Rest();
 		this.resumeKey = options.resumeKey || null;
 		this.resumeTimeout = options.resumeTimeout || 60;
 		this.reconnectTimeout = options.reconnectTimeout || 5000;
 		this.reconnectTries = options.reconnectTries || 5;
-		this.reconnectAttempt = null;
-		this.attempt = 0;
-		this.isConnected = false;
-		this.stats = null;
 	}
 
 	/** Connects to the Lavalink server using the WebSocket. */
@@ -75,7 +67,7 @@ export class Node {
 	}
 
 	/** Reconnects the client to the Lavalink server. */
-	public reconnect() {
+	public reconnect(): void {
 		this.reconnectAttempt = setTimeout(() => {
 			if (this.attempt > this.reconnectTries) this.automata.emit('nodeError', this);
 
@@ -89,7 +81,7 @@ export class Node {
 	}
 
 	/** Disconnects the client from the Lavalink server. */
-	public async disconnect() {
+	public disconnect(): void {
 		if (!this.isConnected) return;
 
 		this.automata.players.forEach((player) => {
@@ -99,7 +91,7 @@ export class Node {
 		this.ws.close(1000, 'destroy');
 		this.ws = null;
 
-		this.automata.nodes.delete(this.name);
+		this.automata.nodes.delete(this.nodeOptions.name);
 		this.automata.emit('nodeDisconnect', this);
 	}
 
@@ -132,7 +124,7 @@ export class Node {
 	}
 
 	/** Sets the stats. */
-	private setStats(packet: NodeStats) {
+	private setStats(packet: NodeStats): void {
 		this.stats = packet;
 	}
 
@@ -174,6 +166,21 @@ export class Node {
 		if (!event) return;
 		this.automata.emit('nodeError', this, event);
 	}
+}
+
+export interface NodeOptions {
+	/** Name of the node. */
+	name: string;
+	/** IP of the node. */
+	host: string;
+	/** Port of the node. */
+	port: number;
+	/** Password of the node. */
+	password: string;
+	/** Requires to be set as true when the node has SSL enabled. Otherwise, it can be left disabled. */
+	secure?: boolean;
+	/** Allows you to set this node to be used across specific regions. */
+	region?: string[];
 }
 
 interface NodeStats {
