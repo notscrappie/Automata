@@ -59,24 +59,9 @@ export class Player extends EventEmitter {
 	}
 
 	/** Sends a request to the server and plays the requested song. */
-	public play() {
-		if (this.queue.length === 0) return;
+	public async play() {
+		if (!this.queue.length) return;
 		this.queue.current = this.queue.shift();
-
-		// Might be unnecessary, you never know.
-		// if (!track) {
-		//	const query = `${this.queue.current.author ?? ''} ${this.queue.current.title ?? ''}`.trim();
-
-		//	const resolvedTracks = await this.automata.resolve({
-		//		query,
-		//		source: this.automata.options.defaultPlatform || 'dzsearch',
-		//		requester: this.queue.current.requester,
-		//	});
-
-		//	return this.queue.current.track = resolvedTracks[0].track;
-		// }
-
-		Object.assign(this, { position: 0, isPlaying: true });
 
 		this.node.rest.updatePlayer({
 			guildId: this.guildId,
@@ -84,6 +69,8 @@ export class Player extends EventEmitter {
 				encodedTrack: this.queue.current.track,
 			},
 		});
+
+		Object.assign(this, { position: 0, isPlaying: true });
 	}
 
 	/** Connects to the user's voice channel. */
