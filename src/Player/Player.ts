@@ -58,8 +58,11 @@ export class Player extends EventEmitter {
 		this.on('event', (data) => this.eventHandler(data));
 	}
 
-	/** Sends a request to the server and plays the requested song. */
-	public async play() {
+	/**
+	 * Sends a request to the server and plays the requested song.
+	 * @returns {void}
+	 */
+	public play(): void {
 		if (!this.queue.length) return;
 		this.queue.current = this.queue.shift();
 
@@ -70,6 +73,7 @@ export class Player extends EventEmitter {
 			},
 		});
 
+		// Don't move this shit above the updatePlayer function or it fucks up the currently playing song. ;-;
 		Object.assign(this, { position: 0, isPlaying: true });
 	}
 
@@ -166,14 +170,6 @@ export class Player extends EventEmitter {
 		});
 
 		return this;
-	}
-
-	public set(key: string, value: unknown) {
-		return (this.data[key] = value);
-	}
-
-	public get<K>(key: string): K {
-		return this.data[key] as K;
 	}
 
 	/** Disconnects the player. */
