@@ -57,28 +57,22 @@ class Player extends events_1.EventEmitter {
         });
         this.on('event', (data) => this.eventHandler(data));
     }
-    /** Sends a request to the server and plays the requested song. */
+    /**
+     * Sends a request to the server and plays the requested song.
+     * @returns {void}
+     */
     play() {
-        if (this.queue.length === 0)
+        if (!this.queue.length)
             return;
         this.queue.current = this.queue.shift();
-        // Might be unnecessary, you never know.
-        // if (!track) {
-        //	const query = `${this.queue.current.author ?? ''} ${this.queue.current.title ?? ''}`.trim();
-        //	const resolvedTracks = await this.automata.resolve({
-        //		query,
-        //		source: this.automata.options.defaultPlatform || 'dzsearch',
-        //		requester: this.queue.current.requester,
-        //	});
-        //	return this.queue.current.track = resolvedTracks[0].track;
-        // }
-        Object.assign(this, { position: 0, isPlaying: true });
         this.node.rest.updatePlayer({
             guildId: this.guildId,
             data: {
                 encodedTrack: this.queue.current.track,
             },
         });
+        // Don't move this shit above the updatePlayer function or it fucks up the currently playing song. ;-;
+        Object.assign(this, { position: 0, isPlaying: true });
     }
     /** Connects to the user's voice channel. */
     connect(options = this) {
@@ -100,7 +94,6 @@ class Player extends events_1.EventEmitter {
             guildId: this.guildId,
             data: { encodedTrack: null },
         });
-        return this;
     }
     /** Pauses the player. */
     pause(toggle) {
@@ -123,7 +116,6 @@ class Player extends events_1.EventEmitter {
             throw new RangeError('Volume must be between 1-100.');
         this.node.rest.updatePlayer({ guildId: this.guildId, data: { volume } });
         this.volume = volume;
-        return this;
     }
     /** Sets the current loop. */
     setLoop(mode) {
@@ -131,12 +123,10 @@ class Player extends events_1.EventEmitter {
         if (!validModes.has(mode))
             throw new TypeError('setLoop only accepts NONE, TRACK and QUEUE as arguments.');
         this.loop = mode;
-        return this;
     }
     /** Sets the text channel where event messages (trackStart, trackEnd etc.) will be sent. */
     setTextChannel(channel) {
         this.textChannel = channel;
-        return this;
     }
     /** Sets the voice channel. */
     setVoiceChannel(channel, options) {
@@ -150,13 +140,6 @@ class Player extends events_1.EventEmitter {
             textChannel: this.textChannel,
             mute: options.mute ?? this.mute,
         });
-        return this;
-    }
-    set(key, value) {
-        return (this.data[key] = value);
-    }
-    get(key) {
-        return this.data[key];
     }
     /** Disconnects the player. */
     disconnect() {
@@ -169,7 +152,6 @@ class Player extends events_1.EventEmitter {
             channel_id: null,
         });
         delete this.voiceChannel;
-        return this;
     }
     /** Destroys the player. */
     destroy() {

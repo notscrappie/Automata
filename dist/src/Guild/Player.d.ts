@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { Manager, ConnectionOptions } from '../Manager';
 import { Connection } from './Connection';
 import { EventEmitter } from 'events';
@@ -25,31 +26,32 @@ export declare class Player extends EventEmitter {
     deaf: boolean;
     volume: number;
     constructor(automata: Manager, node: Node, options: ConnectionOptions);
-    /** Sends a request to the server and plays the requested song. */
+    /**
+     * Sends a request to the server and plays the requested song.
+     * @returns {void}
+     */
     play(): void;
     /** Connects to the user's voice channel. */
     connect(options?: ConnectionOptions): void;
     /** Stops the player from playing. */
-    stop(): this;
+    stop(): void;
     /** Pauses the player. */
     pause(toggle: boolean): boolean;
     /** Seeks the track. */
     seekTo(position: number): void;
     /** Sets the volume of the player. */
-    setVolume(volume: number): this;
+    setVolume(volume: number): void;
     /** Sets the current loop. */
-    setLoop(mode: Loop): this;
+    setLoop(mode: Loop): void;
     /** Sets the text channel where event messages (trackStart, trackEnd etc.) will be sent. */
-    setTextChannel(channel: string): this;
+    setTextChannel(channel: string): void;
     /** Sets the voice channel. */
     setVoiceChannel(channel: string, options: {
         mute?: boolean;
         deaf?: boolean;
-    }): this;
-    set(key: string, value: unknown): unknown;
-    get<K>(key: string): K;
+    }): void;
     /** Disconnects the player. */
-    disconnect(): this;
+    disconnect(): void;
     /** Destroys the player. */
     destroy(): void;
     /** Restarts the player. */

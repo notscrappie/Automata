@@ -15,10 +15,10 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./src/Manager"), exports);
-__exportStar(require("./src/Player/Connection"), exports);
-__exportStar(require("./src/Player/Player"), exports);
+__exportStar(require("./src/Guild/Connection"), exports);
+__exportStar(require("./src/Guild/Player"), exports);
 __exportStar(require("./src/Node/Node"), exports);
 __exportStar(require("./src/Node/Rest"), exports);
-__exportStar(require("./src/Player/Filters"), exports);
+__exportStar(require("./src/Guild/Filters"), exports);
 __exportStar(require("./src/Guild/Track"), exports);
 //# sourceMappingURL=index.js.map
