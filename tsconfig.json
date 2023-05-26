@@ -13,5 +13,6 @@
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "declaration": true,
+    "types": ["node"],
   }
 }
