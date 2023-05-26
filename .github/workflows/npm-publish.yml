@@ -3,7 +3,10 @@
 
 name: Node.js Package
 
-on: [ push ]
+on:
+  push:
+    branches:
+      - v2.2
 
 permissions:
   contents: write
@@ -23,7 +26,8 @@ jobs:
         run: |
           git config --global user.email "${GITHUB_EMAIL}"
           git config --global user.name "${GITHUB_USERNAME}"
-          git checkout -B build origin/build
+          git checkout build
+          git add -f dist
           git commit -m "build for latest changes"
           git push origin build
         env:
