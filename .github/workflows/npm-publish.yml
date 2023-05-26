@@ -26,7 +26,7 @@ jobs:
         run: |
           git config --global user.email "${GITHUB_EMAIL}"
           git config --global user.name "${GITHUB_USERNAME}"
-          git checkout build
+          git checkout -B build
           git add -f dist
           git commit -m "build for latest changes"
           git push origin build
