@@ -18,6 +18,13 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+      - name: Create build branch
+        run: |
+          git checkout -b build
+          git add .
+          git commit -m "Build"
+          git push origin build
+
   publish-npm:
     needs: build
     runs-on: ubuntu-latest
@@ -29,9 +36,9 @@ jobs:
           registry-url: https://registry.npmjs.org/
       - run: npm ci
       - run: |
-          rm -rf ./dist/.git*
-          cd dist
+          cd build
           npm publish --access=public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+
 
