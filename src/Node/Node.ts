@@ -57,7 +57,6 @@ export class Node {
 	public send(payload: unknown): void {
 		const data = JSON.stringify(payload);
 		try {
-			console.log(`Send function data: ${data}`);
 			this.ws.send(data);
 			return null;
 		}
