@@ -1,10 +1,10 @@
-import { Manager, ResolveOptions, ConnectionOptions } from '../Manager';
-import { Node } from '../Node/Node';
-import { Track } from '../Guild/Track';
+/// <reference types="node" />
+import { Manager, ConnectionOptions } from '../Manager';
 import { Connection } from './Connection';
-import Queue from '../Guild/Queue';
 import { EventEmitter } from 'events';
 import { Filters } from './Filters';
+import { Node } from '../Node/Node';
+import Queue from '../Guild/Queue';
 export declare class Player extends EventEmitter {
     readonly data: Record<string, unknown>;
     automata: Manager;
@@ -26,31 +26,32 @@ export declare class Player extends EventEmitter {
     deaf: boolean;
     volume: number;
     constructor(automata: Manager, node: Node, options: ConnectionOptions);
-    /** Sends a request to the server and plays the requested song. */
-    play(): Promise<void>;
+    /**
+     * Sends a request to the server and plays the requested song.
+     * @returns {void}
+     */
+    play(): void;
     /** Connects to the user's voice channel. */
     connect(options?: ConnectionOptions): void;
     /** Stops the player from playing. */
-    stop(): this;
+    stop(): void;
     /** Pauses the player. */
-    pause(toggle: boolean): this;
+    pause(toggle: boolean): boolean;
     /** Seeks the track. */
     seekTo(position: number): void;
     /** Sets the volume of the player. */
-    setVolume(volume: number): this;
+    setVolume(volume: number): void;
     /** Sets the current loop. */
-    setLoop(mode: Loop): this;
+    setLoop(mode: Loop): void;
     /** Sets the text channel where event messages (trackStart, trackEnd etc.) will be sent. */
-    setTextChannel(channel: string): this;
+    setTextChannel(channel: string): void;
     /** Sets the voice channel. */
     setVoiceChannel(channel: string, options: {
         mute?: boolean;
         deaf?: boolean;
-    }): this;
-    set(key: string, value: unknown): unknown;
-    get<K>(key: string): K;
+    }): void;
     /** Disconnects the player. */
-    disconnect(): this;
+    disconnect(): void;
     /** Destroys the player. */
     destroy(): void;
     /** Restarts the player. */
@@ -60,14 +61,11 @@ export declare class Player extends EventEmitter {
     /** Automatically moves the node. */
     AutoMoveNode(): void;
     /** Handles lavalink related events. */
-    eventHandler(data: EventInterface): boolean | Promise<void>;
-    /** Resolves the provided query. */
-    resolve({ query, source, requester }: ResolveOptions): Promise<Track>;
+    eventHandler(data: EventInterface): boolean | void;
     /** Sends the data to the Lavalink node the old fashioned way. */
     send(data: object): void;
 }
 interface EventInterface {
-    encodedTrack: string;
     track: string;
     guildId: string;
     op: 'event';

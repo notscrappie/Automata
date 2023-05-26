@@ -1,19 +1,23 @@
-import { Track } from './Track';
-export default class Queue extends Array<Track> {
-    /** Gets the size of the queue. */
+import { AutomataTrack } from './Track';
+export default class Queue extends Array<AutomataTrack> {
+    /**
+     * Gets the size of the queue.
+    */
     get size(): number;
-    /** Gets the first song in the queue. */
-    first(): Track | 0;
+    /**
+     * Gets the first song in the queue.
+     */
+    first(): AutomataTrack | 0;
     /** Adds a new track to the queue. */
-    add(track: Track): Queue;
+    add(track: AutomataTrack): Queue;
     /** The current track. */
-    current: Track | null;
+    current: AutomataTrack | null;
     /** The previous track. */
-    previous: Track | null;
+    previous: AutomataTrack | null;
     /** Removes a track from the queue. */
-    remove(index: number): Track;
+    remove(index: number): AutomataTrack;
     /** Clears the queue. */
-    clear(): Track[];
+    clear(): AutomataTrack[];
     /** Shuffles the queue. */
     shuffle(): void;
 }

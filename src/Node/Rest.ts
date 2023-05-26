@@ -1,15 +1,21 @@
 import { Node } from './Node';
 import { fetch } from 'undici';
-import { Manager } from '../Manager';
+
+// eslint-disable-next-line no-shadow
+enum RequestMethod {
+	'Get' = 'GET',
+	'Delete' = 'DELETE',
+	'Post' = 'POST',
+	'Patch' = 'PATCH',
+	'Put' = 'PUT',
+  }
 
 export class Rest {
 	private sessionId: string;
-	private password: string;
-	public url: string;
-	public automata: Manager;
+	private readonly password: string;
+	private readonly url: string;
 
-	constructor(automata: Manager, node: Node) {
-		this.automata = automata;
+	constructor(node: Node) {
 		this.url = `http${node.secure ? 's' : ''}://${node.options.host}:${
 			node.options.port
 		}`;
@@ -23,18 +29,20 @@ export class Rest {
 	}
 
 	/** Retrieves all the players that are currently running on the node. */
-	getAllPlayers() {
+	public getAllPlayers() {
 		return this.get(`/v3/sessions/${this.sessionId}/players`);
 	}
 
 	/** Sends a PATCH request to update player related data. */
-	public async updatePlayer(options: playOptions) {
-		return await this.patch(`/v3/sessions/${this.sessionId}/players/${options.guildId}/?noReplace=false`, options.data);
+	public async updatePlayer(options: playOptions): Promise<unknown> {
+		const request = await this.patch(`/v3/sessions/${this.sessionId}/players/${options.guildId}/?noReplace=false`, options.data);
+		return request;
 	}
 
 	/** Sends a DELETE request to the server to destroy the player. */
 	public async destroyPlayer(guildId: string) {
-		return await this.delete(`/v3/sessions/${this.sessionId}/players/${guildId}`);
+		const request = await this.delete(`/v3/sessions/${this.sessionId}/players/${guildId}`);
+		return request;
 	}
 
 	/* Sends a GET request to the specified endpoint and returns the response data. */
@@ -47,7 +55,9 @@ export class Rest {
 					Authorization: this.password,
 				},
 			});
-			return await req.json();
+
+			const json = await req.json();
+			return json;
 		}
 		catch (e) {
 			return null;
@@ -55,7 +65,7 @@ export class Rest {
 	}
 
 	/* Sends a PATCH request to the specified endpoint and returns the response data. */
-	public async patch(endpoint: RouteLike, body: any) {
+	public async patch(endpoint: RouteLike, body: unknown) {
 		try {
 			const req = await fetch(this.url + endpoint, {
 				method: RequestMethod.Patch,
@@ -66,7 +76,8 @@ export class Rest {
 				body: JSON.stringify(body),
 			});
 
-			return await req.json();
+			const json = await req.json();
+			return json;
 		}
 		catch (e) {
 			return null;
@@ -74,7 +85,7 @@ export class Rest {
 	}
 
 	/* Sends a POST request to the specified endpoint and returns the response data. */
-	public async post(endpoint: RouteLike, body: any) {
+	public async post(endpoint: RouteLike, body: unknown) {
 		try {
 			const req = await fetch(this.url + endpoint, {
 				method: RequestMethod.Post,
@@ -85,7 +96,8 @@ export class Rest {
 				body: JSON.stringify(body),
 			});
 
-			return await req.json();
+			const json = await req.json();
+			return json;
 		}
 		catch (e) {
 			return null;
@@ -103,7 +115,8 @@ export class Rest {
 				},
 			});
 
-			return await req.json();
+			const json = await req.json();
+			return json;
 		}
 		catch (e) {
 			return null;
@@ -111,7 +124,7 @@ export class Rest {
 	}
 }
 
-export interface playOptions {
+interface playOptions {
   guildId: string;
   data: {
     encodedTrack?: string;
@@ -122,17 +135,8 @@ export interface playOptions {
     position?: number;
     paused?: boolean;
     filters?: object;
-    voice?: any;
+    voice?: unknown;
   };
 }
 
-export type RouteLike = `/${string}`;
-
-// eslint-disable-next-line no-shadow
-enum RequestMethod {
-  'Get' = 'GET',
-  'Delete' = 'DELETE',
-  'Post' = 'POST',
-  'Patch' = 'PATCH',
-  'Put' = 'PUT',
-}
+type RouteLike = `/${string}`;

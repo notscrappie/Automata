@@ -13,7 +13,7 @@ export declare class Connection {
         token: string;
     }): void;
     /** Updates the state of the player. */
-    setStateUpdate({ session_id, channel_id, self_deaf, self_mute }: any): void;
+    setStateUpdate(data: any): void;
 }
 interface IVoiceServer {
     token: string;

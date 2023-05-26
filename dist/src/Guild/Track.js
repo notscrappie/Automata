@@ -1,55 +1,30 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Track = void 0;
-class Track {
+exports.AutomataTrack = void 0;
+class AutomataTrack {
     track;
-    info;
-    constructor({ track, info }, requester) {
-        this.track = track;
-        this.info = { ...info, requester };
-    }
-    /** Resolves the track. */
-    async resolve(automata) {
-        const query = `${this.info.author ?? ''} ${this.info.title ?? ''}`.trim();
-        const result = await automata.resolve({
-            query,
-            source: automata.options.defaultPlatform || 'dzsearch',
-            requester: this.info.requester,
-        });
-        const trackToUse = result.tracks[0];
-        if (trackToUse) {
-            this.info.identifier = trackToUse?.info?.identifier;
-            this.track = trackToUse?.track;
-        }
-        return this;
-    }
-    get identifier() {
-        return this.info.identifier;
-    }
-    get isSeekable() {
-        return this.info.isSeekable;
-    }
-    get author() {
-        return this.info.author;
-    }
-    get length() {
-        return this.info.length;
-    }
-    get isStream() {
-        return this.info.isStream;
-    }
-    get title() {
-        return this.info.title;
-    }
-    get uri() {
-        return this.info.uri;
-    }
-    get sourceName() {
-        return this.info.sourceName;
-    }
-    get requester() {
-        return this.info.requester;
+    identifier;
+    author;
+    title;
+    length;
+    uri;
+    isSeekable;
+    isStream;
+    sourceName;
+    requester;
+    loadType;
+    constructor(data, requester) {
+        this.track = data.track;
+        this.identifier = data.info.identifier;
+        this.author = data.info.author;
+        this.title = data.info.title;
+        this.length = data.info.length;
+        this.uri = data.info.uri;
+        this.isSeekable = data.info.isSeekable;
+        this.isStream = data.info.isStream;
+        this.sourceName = data.info.sourceName;
+        this.requester = requester;
     }
 }
-exports.Track = Track;
+exports.AutomataTrack = AutomataTrack;
 //# sourceMappingURL=Track.js.map

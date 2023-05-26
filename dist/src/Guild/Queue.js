@@ -1,11 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class Queue extends Array {
-    /** Gets the size of the queue. */
+    /**
+     * Gets the size of the queue.
+    */
     get size() {
         return this.length;
     }
-    /** Gets the first song in the queue. */
+    /**
+     * Gets the first song in the queue.
+     */
     first() {
         return this ? this[0] : 0;
     }

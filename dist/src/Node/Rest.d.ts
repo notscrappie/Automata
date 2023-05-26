@@ -1,11 +1,9 @@
 import { Node } from './Node';
-import { Manager } from '../Manager';
 export declare class Rest {
     private sessionId;
-    private password;
-    url: string;
-    automata: Manager;
-    constructor(automata: Manager, node: Node);
+    private readonly password;
+    private readonly url;
+    constructor(node: Node);
     /** Sets the session ID. */
     setSessionId(sessionId: string): void;
     /** Retrieves all the players that are currently running on the node. */
@@ -15,11 +13,11 @@ export declare class Rest {
     /** Sends a DELETE request to the server to destroy the player. */
     destroyPlayer(guildId: string): Promise<unknown>;
     get(path: RouteLike): Promise<unknown>;
-    patch(endpoint: RouteLike, body: any): Promise<unknown>;
-    post(endpoint: RouteLike, body: any): Promise<unknown>;
+    patch(endpoint: RouteLike, body: unknown): Promise<unknown>;
+    post(endpoint: RouteLike, body: unknown): Promise<unknown>;
     delete(endpoint: RouteLike): Promise<unknown>;
 }
-export interface playOptions {
+interface playOptions {
     guildId: string;
     data: {
         encodedTrack?: string;
@@ -30,7 +28,8 @@ export interface playOptions {
         position?: number;
         paused?: boolean;
         filters?: object;
-        voice?: any;
+        voice?: unknown;
     };
 }
-export type RouteLike = `/${string}`;
+type RouteLike = `/${string}`;
+export {};
