@@ -21,7 +21,7 @@ jobs:
       - name: Create build branch
         run: |
           git checkout -b build
-          git add .  
+          git add dist
           git config --global user.email "${GITHUB_EMAIL}"
           git config --global user.name "${GITHUB_USERNAME}"
           git commit -m "build for latest changes"
@@ -32,6 +32,6 @@ jobs:
       - name: Publish to NPM
         uses: JS-DevTools/npm-publish@v1
         with: 
-          token: ${{ secrets.NPM_AUTH_TOKEN }}
+          token: ${{ secrets.NPM_TOKEN }}
 
 
