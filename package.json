@@ -1,5 +1,5 @@
 {
-  "name": "@shadowrunners/automatadev",
+  "name": "@shadowrunners/automata",
   "version": "2.1.0",
   "description": "Automata is a fork of the Poru (by parasop) lavalink client developed and maintained by scrappie.",
   "main": "dist/index.js",
