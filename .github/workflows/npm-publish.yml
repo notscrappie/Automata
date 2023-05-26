@@ -15,9 +15,8 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 16
-      - run: npm i
-      - run: npm run build
       - run: npm ci
+      - run: npm run build
 
   publish-npm:
     needs: build
@@ -29,6 +28,10 @@ jobs:
           node-version: 16
           registry-url: https://registry.npmjs.org/
       - run: npm ci
-      - run: cd dist && npm publish --access=public
+      - run: |
+          rm -rf ./dist/.git*
+          cd dist
+          npm publish --access=public
         env:
-          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+
