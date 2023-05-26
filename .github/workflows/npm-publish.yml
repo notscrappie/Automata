@@ -24,6 +24,7 @@ jobs:
 
       - name: Create build branch
         run: |
+          git pull origin build
           git config --global user.email "${GITHUB_EMAIL}"
           git config --global user.name "${GITHUB_USERNAME}"
           git checkout -B build
