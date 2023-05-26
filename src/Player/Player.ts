@@ -5,48 +5,66 @@ import { Filters } from './Filters';
 import { Node } from '../Node/Node';
 import Queue from '../Guild/Queue';
 
+/** The main hub for everything regarding audio playback. */
 export class Player extends EventEmitter {
+	/** The data associated with the player. */
 	public readonly data: Record<string, unknown>;
-	public automata: Manager;
+	/** The manager responsible for the player. */
+	protected automata: Manager;
+	/** The node used for audio playback. */
 	public node: Node;
+	/** The connection options for the player. */
+	public options: ConnectionOptions;
+	/** The connection instance for the player. */
 	public connection: Connection;
+	/** The queue of audio tracks. */
 	public queue: Queue;
+	/** The filters applied to the audio. */
 	public filters: Filters;
+	/** The ID of the guild the player belongs to. */
 	public guildId: string;
+	/** The ID of the voice channel the player is connected to. */
 	public voiceChannel: string;
+	/** The ID of the text channel associated with the player. */
 	public textChannel: string;
-	public isPlaying: boolean;
-	public isPaused: boolean;
-	public isConnected: boolean;
-	public loop: Loop;
-	public position: number;
+	/** The current position in the currently playing track. */
+	protected position: number;
+	/** The current ping to the audio node. */
 	public ping: number;
-	public timestamp: number;
+	/** The timestamp of the last player update. */
+	protected timestamp: number | null;
+	/** Indicates whether the player is muted. */
 	public mute: boolean;
+	/** Indicates whether the player is deafened. */
 	public deaf: boolean;
+	/** The volume level of the player. */
 	public volume: number;
+	/** Indicates if the player is playing or not. */
+	public isPlaying: boolean;
+	/** Indicates if the player is paused or not. */
+	public isPaused: boolean;
+	/** Indicates if the player is connected or not. */
+	public isConnected: boolean;
+	/** The current loop the player is on. */
+	public loop: string;
 
 	constructor(automata: Manager, node: Node, options: ConnectionOptions) {
 		super();
-		this.automata = automata;
 		this.node = node;
+		this.automata = automata;
+
 		this.queue = new Queue();
 		this.connection = new Connection(this);
-		this.guildId = options.guildId;
 		this.filters = new Filters(this);
+
+		this.guildId = options.guildId;
 		this.voiceChannel = options.voiceChannel;
 		this.textChannel = options.textChannel;
 		this.deaf = options.deaf ?? false;
 		this.mute = options.mute ?? false;
+
 		this.volume = 100;
-		this.isPlaying = false;
-		this.isPaused = false;
-		this.position = 0;
-		this.ping = 0;
-		this.timestamp = null;
-		this.isConnected = false;
 		this.loop = 'NONE';
-		this.data = {};
 
 		this.on('playerUpdate', ({ state: { connected, position, ping, time } }) => {
 			this.isConnected = connected;
@@ -77,20 +95,25 @@ export class Player extends EventEmitter {
 		Object.assign(this, { position: 0, isPlaying: true });
 	}
 
-	/** Connects to the user's voice channel. */
-	public connect(options: ConnectionOptions = this) {
+	/**
+	 * Connects to the user's voice channel.
+	 * @param options - The connection options.
+	 */
+	public connect(options: ConnectionOptions = this): void {
+		const { guildId, voiceChannel, deaf, mute } = options;
+
 		this.send({
-			guild_id: options.guildId,
-			channel_id: options.voiceChannel,
-			self_deaf: options.deaf ?? true,
-			self_mute: options.mute ?? false,
+			guild_id: guildId,
+			channel_id: voiceChannel,
+			self_deaf: deaf ?? true,
+			self_mute: mute ?? false,
 		});
 
 		this.isConnected = true;
 	}
 
 	/** Stops the player from playing. */
-	public stop() {
+	public stop(): void {
 		if (!this.isPlaying) return;
 
 		this.position = 0;
@@ -100,8 +123,6 @@ export class Player extends EventEmitter {
 			guildId: this.guildId,
 			data: { encodedTrack: null },
 		});
-
-		return this;
 	}
 
 	/** Pauses the player. */
@@ -130,11 +151,10 @@ export class Player extends EventEmitter {
 		this.node.rest.updatePlayer({ guildId: this.guildId, data: { volume } });
 
 		this.volume = volume;
-		return this;
 	}
 
 	/** Sets the current loop. */
-	public setLoop(mode: Loop) {
+	public setLoop(mode: Loop): void {
 		const validModes = new Set(['NONE', 'TRACK', 'QUEUE']);
 		if (!validModes.has(mode))
 			throw new TypeError(
@@ -142,13 +162,11 @@ export class Player extends EventEmitter {
 			);
 
 		this.loop = mode;
-		return this;
 	}
 
 	/** Sets the text channel where event messages (trackStart, trackEnd etc.) will be sent. */
 	public setTextChannel(channel: string) {
 		this.textChannel = channel;
-		return this;
 	}
 
 	/** Sets the voice channel. */
@@ -168,12 +186,10 @@ export class Player extends EventEmitter {
 			textChannel: this.textChannel,
 			mute: options.mute ?? this.mute,
 		});
-
-		return this;
 	}
 
 	/** Disconnects the player. */
-	public disconnect() {
+	public disconnect(): void {
 		if (!this.voiceChannel) return;
 		this.pause(true);
 		this.isConnected = false;
@@ -184,18 +200,17 @@ export class Player extends EventEmitter {
 		});
 
 		delete this.voiceChannel;
-		return this;
 	}
 
 	/** Destroys the player. */
-	public destroy() {
+	public destroy(): void {
 		this.disconnect();
 		this.node.rest.destroyPlayer(this.guildId);
 		this.automata.players.delete(this.guildId);
 	}
 
 	/** Restarts the player. */
-	public restart() {
+	public restart(): void {
 		if (!this.queue.current?.track) {
 			if (this.queue.length) this.play();
 			return;
@@ -210,8 +225,12 @@ export class Player extends EventEmitter {
 		});
 	}
 
-	/** Moves the player to another node. */
-	public moveNode(name: string) {
+	/**
+	 * Moves the player to another node.
+	 * @param name - The name of the new node;
+	 * @returns {void}
+	 */
+	public moveNode(name: string): void {
 		const node = this.automata.nodes.get(name);
 		if (!node || node.options.name === this.node.options.name) return;
 		if (!node.isConnected) throw new Error('The node provided is not available.');
@@ -224,93 +243,92 @@ export class Player extends EventEmitter {
 	}
 
 	/** Automatically moves the node. */
-	public AutoMoveNode() {
+	public AutoMoveNode(): void {
 		const [node] = this.automata.leastUsedNodes;
 		if (!node) throw new Error('There aren\'t any available nodes.');
 		if (!this.automata.nodes.has(node.options.name)) return this.destroy();
 
-		this.moveNode(node.options.name);
+		return this.moveNode(node.options.name);
 	}
 
-	/** Handles lavalink related events. */
-	public eventHandler(data: EventInterface) {
-		switch (data.type) {
-		case 'TrackStartEvent': {
-			this.isPlaying = true;
-			this.automata.emit('trackStart', this, this.queue.current);
-			break;
-		}
-		case 'TrackEndEvent': {
-			this.queue.previous = this.queue.current;
-			if (this.loop === 'TRACK') {
-				this.queue.unshift(this.queue.previous);
-				this.automata.emit('trackEnd', this, this.queue.current);
-				return this.play();
-			}
-			else if (this.queue.current && this.loop === 'QUEUE') {
-				this.queue.push(this.queue.previous);
-				this.automata.emit('trackEnd', this, this.queue.current, data);
-				return this.play();
-			}
+	/**
+	 * Handles lavalink related events.
+	 * @param data The event data.
+	 */
+	public eventHandler(data: EventInterface): void {
+		const eventHandlers: Record<string, () => void> = {
+			TrackStartEvent: () => {
+				this.isPlaying = true;
+				this.automata.emit('trackStart', this, this.queue.current);
+			},
+			TrackEndEvent: () => {
+				this.queue.previous = this.queue.current;
 
-			if (this.queue.length === 0) {
+				if (this.loop === 'TRACK') {
+					this.queue.unshift(this.queue.previous);
+					this.automata.emit('trackEnd', this, this.queue.current);
+					return this.play();
+				}
+
+				else if (this.queue.current && this.loop === 'QUEUE') {
+					this.queue.push(this.queue.previous);
+					this.automata.emit('trackEnd', this, this.queue.current, data);
+					return this.play();
+				}
+
+				if (this.queue.length === 0) {
+					this.isPlaying = false;
+					return this.automata.emit('queueEnd', this);
+				}
+				else if (this.queue.length > 0) {
+					this.automata.emit('trackEnd', this, this.queue.current);
+					return this.play();
+				}
+
 				this.isPlaying = false;
-				return this.automata.emit('queueEnd', this);
-			}
-			else if (this.queue.length > 0) {
-				this.automata.emit('trackEnd', this, this.queue.current);
-				return this.play();
-			}
+				this.automata.emit('queueEnd', this);
+			},
 
-			this.isPlaying = false;
-			this.automata.emit('queueEnd', this);
-			break;
-		}
+			TrackStuckEvent: () => {
+				this.automata.emit('trackStuck', this, this.queue.current, data);
+				return this.stop();
+			},
+			TrackExceptionEvent: () => {
+				this.automata.emit('trackStuck', this, this.queue.current, data);
+				return this.stop();
+			},
+			WebSocketClosedEvent: () => {
+				if ([4015, 4009].includes(data.code)) {
+					this.send({
+						guild_id: data.guildId,
+						channel_id: this.voiceChannel,
+						self_mute: this.mute,
+						self_deaf: this.deaf,
+					});
+				}
+				this.automata.emit('socketClose', this, this.queue.current, data);
+				this.pause(true);
+			},
+		};
 
-		case 'TrackStuckEvent': {
-			this.automata.emit('trackStuck', this, this.queue.current, data);
-			this.stop();
-			break;
-		}
-		case 'TrackExceptionEvent': {
-			this.automata.emit('trackStuck', this, this.queue.current, data);
-			this.stop();
-			break;
-		}
-		case 'WebSocketClosedEvent': {
-			if ([4015, 4009].includes(data.code)) {
-				this.send({
-					guild_id: data.guildId,
-					channel_id: this.voiceChannel,
-					self_mute: this.mute,
-					self_deaf: this.deaf,
-				});
-			}
-			this.automata.emit('socketClose', this, this.queue.current, data);
-			this.pause(true);
-			break;
-		}
-		default: break;
-		}
+		const eventType = data.type;
+		const handleEvents = eventHandlers[eventType];
+		if (eventHandlers) handleEvents();
 	}
 
 	/** Sends the data to the Lavalink node the old fashioned way. */
-	public send(data: object) {
-		this.automata.send({ op: 4, d: data });
+	public send(data: object): void {
+		return this.automata.send({ op: 4, d: data });
 	}
 }
 
 interface EventInterface {
-  track: string;
-  guildId: string;
-  op: 'event';
-  code?: number;
-  type:
-    | 'TrackStartEvent'
-    | 'TrackEndEvent'
-    | 'TrackStuckEvent'
-    | 'TrackExceptionEvent'
-    | 'WebSocketClosedEvent'
+	/** The type of the event. */
+	type: string;
+
+	code: number;
+	/** The ID of the guild where the event occured. */
+	guildId: string;
 }
 
-export type Loop = 'NONE' | 'TRACK' | 'QUEUE';
+type Loop = 'NONE' | 'TRACK' | 'QUEUE';
