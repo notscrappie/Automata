@@ -21,11 +21,9 @@ jobs:
 
       - name: Create build branch
         run: |
-          git pull
-          git checkout -b build
-          git add -f dist
           git config --global user.email "${GITHUB_EMAIL}"
           git config --global user.name "${GITHUB_USERNAME}"
+          git checkout -B build origin/build
           git commit -m "build for latest changes"
           git push origin build
         env:
