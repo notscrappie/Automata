@@ -20,7 +20,11 @@ export class Connection {
 		this.player = player;
 		this.sessionId = null;
 		this.region = null;
-		this.voice = null;
+		this.voice = {
+			sessionId: null,
+			token: null,
+			endpoint: null,
+		};
 		this.self_mute = false;
 		this.self_deaf = false;
 	}
@@ -34,11 +38,8 @@ export class Connection {
 	public setServersUpdate({ endpoint, token }: ServerUpdatePacket): void {
 		if (!endpoint) throw new Error('Automata · No session ID found.');
 
-		this.voice = {
-			sessionId: null,
-			token,
-			endpoint,
-		};
+		this.voice.endpoint = endpoint;
+		this.voice.token = token;
 
 		this.region = endpoint.split('.').shift()?.replace(/[0-9]/g, '') ?? null;
 
