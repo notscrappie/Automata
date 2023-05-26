@@ -25,7 +25,9 @@ jobs:
           git config --global user.name "${GITHUB_USERNAME}"
           git commit -m "build for latest changes"
           git push origin build
-          
+        env:
+          GITHUB_USERNAME: scrappie
+          GITHUB_EMAIL: ${{ secrets.EMAIL }}
       - name: Publish to NPM
         uses: JS-DevTools/npm-publish@v1
         with: 
