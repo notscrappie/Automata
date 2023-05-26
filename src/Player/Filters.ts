@@ -1,182 +1,139 @@
+import { bassBoostEqualizer, softEqualizer, trebleBassEqualizer, tvEqualizer, vaporwaveEqualizer } from '../Utils/Constants';
 import { Player } from './Player';
 
 export class Filters {
 	public player: Player;
-	public volume: number;
-	public equalizer: Band[];
-	public vibrato: vibratoOptions;
-	public rotation: rotationOptions;
-	public timescale: timescaleOptions;
-	public karaoke: karaokeOptions;
+	public volume = 1.0;
+	public equalizer: Band[] = [];
+	public vibrato: vibratoOptions = null;
+	public rotation: rotationOptions = null;
+	public timescale: timescaleOptions = null;
+	public karaoke: karaokeOptions = null;
 
 	constructor(player: Player) {
 		this.player = player;
-		this.volume = 1.0;
-		this.equalizer = [];
-		this.timescale = null;
-		this.vibrato = null;
-		this.rotation = null;
-		this.karaoke = null;
 	}
 
-	/** Sets the equalizer bands and updates the filters. */
-	public setEqualizer(bands: Band[]): Filters {
+	/**
+	 * Sets the equalizer bands and updates the filters.
+	 * @param bands - The equalizer bands.
+	 * @returns The updated Filters instance applied to the currently playing track.
+	 */
+	public setEqualizer(bands?: Band[]): Filters {
 		this.equalizer = bands;
 		this.updateFilters();
 		return this;
 	}
 
-	/** Applies the bass boost filter. */
-	public bassBoost(): Filters {
-		const equalizer = [
-			{ bands: 0, gain: 0.65 },
-			{ bands: 1, gain: 0.45 },
-			{ bands: 2, gain: -0.45 },
-			{ bands: 3, gain: -0.65 },
-			{ bands: 4, gain: -0.35 },
-			{ bands: 5, gain: 0.45 },
-			{ bands: 6, gain: 0.55 },
-			{ bands: 7, gain: 0.6 },
-			{ bands: 8, gain: 0.6 },
-			{ bands: 9, gain: 0.6 },
-			{ bands: 10, gain: 0 },
-			{ bands: 11, gain: 0 },
-			{ bands: 12, gain: 0 },
-			{ bands: 13, gain: 0 },
-		];
-
-		return this.setEqualizer(equalizer);
+	/**
+	 * Applies the 8D filter.
+	 * @returns The updated Filters instance applied to the currently playing track.
+	*/
+	public eightD(): Filters {
+		return this.setRotation({ rotationHz: 0.2 });
 	}
 
-	/** Applies the nightcore filter. */
+	/**
+	 * Applies the bass boost filter.
+	 * @returns The updated Filters instance applied to the currently playing track.
+	*/
+	public bassBoost(): Filters {
+		return this.setEqualizer(bassBoostEqualizer);
+	}
+
+	/**
+	 * Applies the nightcore filter.
+	 * @returns The updated Filters instance applied to the currently playing track.
+	*/
 	public nightcore(): Filters {
-		const timescale: timescaleOptions = {
+		return this.setTimescale({
 			speed: 1.1,
 			pitch: 1.125,
 			rate: 1.05,
-		};
-
-		return this.setTimescale(timescale);
+		});
 	}
 
-	/** Applies the slow motion filter. */
+	/**
+	 * Applies the slow motion filter.
+	 * @returns The updated Filters instance applied to the currently playing track.
+	*/
 	public slowmo(): Filters {
-		const timescale: timescaleOptions = {
+		return this.setTimescale({
 			speed: 0.5,
 			pitch: 1.0,
 			rate: 0.8,
-		};
-
-		return this.setTimescale(timescale);
+		});
 	}
 
-	/** Applies the soft filter. */
+	/**
+	 * Applies the soft filter.
+	 * @returns The updated Filters instance applied to the currently playing track.
+	 */
 	public soft(): Filters {
-		const equalizer: Band[] = [
-			{ bands: 0, gain: 0 },
-			{ bands: 1, gain: 0 },
-			{ bands: 2, gain: 0 },
-			{ bands: 3, gain: 0 },
-			{ bands: 4, gain: 0 },
-			{ bands: 5, gain: 0 },
-			{ bands: 6, gain: 0 },
-			{ bands: 7, gain: 0 },
-			{ bands: 8, gain: -0.25 },
-			{ bands: 9, gain: -0.25 },
-			{ bands: 10, gain: -0.25 },
-			{ bands: 11, gain: -0.25 },
-			{ bands: 12, gain: -0.25 },
-			{ bands: 13, gain: -0.25 },
-		];
-
-		return this.setEqualizer(equalizer);
+		return this.setEqualizer(softEqualizer);
 	}
 
-	/** Applies the tv filter. */
+	/**
+	 * Applies the TV filter.
+	 * @returns The updated Filters instance applied to the currently playing track.
+	*/
 	public tv(): Filters {
-		const equalizer: Band[] = [
-			{ bands: 0, gain: 0 },
-			{ bands: 1, gain: 0 },
-			{ bands: 2, gain: 0 },
-			{ bands: 3, gain: 0 },
-			{ bands: 4, gain: 0 },
-			{ bands: 5, gain: 0 },
-			{ bands: 6, gain: 0 },
-			{ bands: 7, gain: 0.65 },
-			{ bands: 8, gain: 0.65 },
-			{ bands: 9, gain: 0.65 },
-			{ bands: 10, gain: 0.65 },
-			{ bands: 11, gain: 0.65 },
-			{ bands: 12, gain: 0.65 },
-			{ bands: 13, gain: 0.65 },
-		];
-
-		return this.setEqualizer(equalizer);
+		return this.setEqualizer(tvEqualizer);
 	}
 
-	/** Applies the treble bass filter. */
+	/**
+	 * Applies the treble bass filter.
+	 * @returns The updated Filters instance applied to the currently playing track.
+	*/
 	public trebleBass(): Filters {
-		const equalizer: Band[] = [
-			{ bands: 0, gain: 0.6 },
-			{ bands: 1, gain: 0.67 },
-			{ bands: 2, gain: 0.67 },
-			{ bands: 3, gain: 0 },
-			{ bands: 4, gain: -0.5 },
-			{ bands: 5, gain: 0.15 },
-			{ bands: 6, gain: -0.45 },
-			{ bands: 7, gain: 0.23 },
-			{ bands: 8, gain: 0.35 },
-			{ bands: 9, gain: 0.45 },
-			{ bands: 10, gain: 0.55 },
-			{ bands: 11, gain: 0.6 },
-			{ bands: 12, gain: 0.55 },
-			{ bands: 13, gain: 0 },
-		];
-
-		return this.setEqualizer(equalizer);
+		return this.setEqualizer(trebleBassEqualizer);
 	}
 
-	/** Applies the vaporwave filter. */
+	/**
+	 * Applies the vaporwave filter.
+	 * @returns The updated Filters instance applied to the currently playing track.
+	*/
 	public vaporwave(): Filters {
-		const equalizer = [
-			{ bands: 0, gain: 0 },
-			{ bands: 1, gain: 0 },
-			{ bands: 2, gain: 0 },
-			{ bands: 3, gain: 0 },
-			{ bands: 4, gain: 0 },
-			{ bands: 5, gain: 0 },
-			{ bands: 6, gain: 0 },
-			{ bands: 7, gain: 0 },
-			{ bands: 8, gain: 0.15 },
-			{ bands: 9, gain: 0.15 },
-			{ bands: 10, gain: 0.15 },
-			{ bands: 11, gain: 0.15 },
-			{ bands: 12, gain: 0.15 },
-			{ bands: 13, gain: 0.15 },
-		];
-
-		this.setEqualizer(equalizer);
+		this.setEqualizer(vaporwaveEqualizer);
 		return this.setTimescale({ pitch: 0.55 });
 	}
 
+	/**
+	 * Applies the karaoke options specified by the filter.
+	 * @returns The updated Filters instance applied to the currently playing track.
+	 */
 	public setKaraoke(karaoke?: karaokeOptions): Filters {
 		this.karaoke = karaoke || null;
 		this.updateFilters();
+
 		return this;
 	}
 
+	/**
+	 * Applies the timescale options specified by the filter.
+	 * @returns The updated Filters instance applied to the currently playing track.
+	 */
 	public setTimescale(timescale?: timescaleOptions): Filters {
 		this.timescale = timescale || null;
 		this.updateFilters();
+
 		return this;
 	}
 
+	/**
+	 * Applies the vibrato options specified by the filter.
+	 * @returns The updated Filters instance applied to the currently playing track.
+	 */
 	public setVibrato(vibrato?: vibratoOptions): Filters {
 		this.vibrato = vibrato || null;
 		this.updateFilters();
 		return this;
 	}
 
+	/**
+	 * Applies the rotation options specified by the filter.
+	 * @returns The updated Filters instance applied to the currently playing track.
+	 */
 	public setRotation(rotation?: rotationOptions): Filters {
 		this.rotation = rotation || null;
 		this.updateFilters();
@@ -184,49 +141,76 @@ export class Filters {
 		return this;
 	}
 
+	/**
+	 * Clears the filters.
+	 * @returns The updated Filters instance applied to the currently playing track.
+	 */
 	public clearFilters(): Filters {
 		this.player.filters = new Filters(this.player);
 		this.updateFilters();
 		return this;
 	}
 
-
+	/**
+     * Updates the filters.
+     * @returns The updated Filters instance applied to the currently playing track.
+     */
 	public updateFilters(): Filters {
 		const { equalizer, karaoke, timescale, vibrato, rotation, volume } = this;
 
 		this.player.node.rest.updatePlayer({
 			guildId: this.player.guildId,
 			data: {
-				filters: { equalizer, karaoke, timescale, vibrato, rotation, volume },
+				filters: {
+					volume, equalizer, karaoke, timescale, vibrato, rotation,
+				},
 			},
 		});
+
 		return this;
 	}
 }
 
-interface Band {
-  bands: number;
-  gain: number;
+/** Represents an equalizer band. */
+export interface Band {
+	/** The index of the equalizer band. */
+	bands: number;
+	/** The gain value of the equalizer band. */
+	gain: number;
 }
 
+/** Options for adjusting the timescale of audio. */
 interface timescaleOptions {
-  speed?: number;
-  pitch?: number;
-  rate?: number;
+	/** The speed factor for the timescale. */
+	speed?: number;
+	/** The pitch factor for the timescale. */
+	pitch?: number;
+	/** The rate factor for the timescale. */
+	rate?: number;
 }
 
+/** Options for applying vibrato effect to audio. */
 interface vibratoOptions {
-  frequency: number;
-  depth: number;
+	/** The frequency of the vibrato effect. */
+	frequency: number;
+	/** * The depth of the vibrato effect.*/
+	depth: number;
 }
 
+/** Options for applying rotation effect to audio. */
 interface rotationOptions {
-  rotationHz: number;
+	/** The rotation speed in Hertz (Hz). */
+	rotationHz: number;
 }
 
+/** Options for applying karaoke effect to audio. */
 interface karaokeOptions {
-  level?: number;
-  monoLevel?: number;
-  filterBand?: number;
-  filterWidth?: number;
+	/** The level of karaoke effect. */
+	level?: number;
+	/** The mono level of karaoke effect. */
+	monoLevel?: number;
+	/** The filter band of karaoke effect. */
+	filterBand?: number;
+	/** The filter width of karaoke effect. */
+	filterWidth?: number;
 }
