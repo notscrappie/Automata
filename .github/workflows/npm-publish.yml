@@ -24,9 +24,9 @@ jobs:
 
       - name: Create build branch
         run: |
-          git pull origin build --rebase
           git config --global user.email "${GITHUB_EMAIL}"
           git config --global user.name "${GITHUB_USERNAME}"
+          git pull origin build --rebase
           git checkout -B build
           git add -f dist
           git commit -m "build for latest changes"
