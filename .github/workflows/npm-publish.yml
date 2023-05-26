@@ -15,30 +15,20 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 16
-      - run: npm ci
       - run: npm run build
 
       - name: Create build branch
         run: |
           git checkout -b build
-          git add .
-          git commit -m "Build"
+          git add .  
+          git config --global user.email "${GITHUB_EMAIL}"
+          git config --global user.name "${GITHUB_USERNAME}"
+          git commit -m "build for latest changes"
           git push origin build
-
-  publish-npm:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          registry-url: https://registry.npmjs.org/
-      - run: npm ci
-      - run: |
-          cd build
-          npm publish --access=public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
+          
+      - name: Publish to NPM
+        uses: JS-DevTools/npm-publish@v1
+        with: 
+          token: ${{ secrets.NPM_AUTH_TOKEN }}
 
 
