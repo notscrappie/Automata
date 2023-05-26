@@ -2,39 +2,51 @@ import { AutomataTrack, TrackData } from './Guild/Track';
 import { Node, NodeOptions } from './Node/Node';
 import { Player } from './Player/Player';
 import { EventEmitter } from 'events';
-import { Client } from 'discord.js';
 
+/** The main hub for interacting with Lavalink via Automata. (shit taken from erela.js's repo, rip erela) */
 export class Manager extends EventEmitter {
-	public readonly client: Client;
-	public readonly _nodes: NodeOptions[];
+	private readonly _nodes: NodeOptions[];
 
+	/** The configuration options for the Manager. */
 	public options: AutomataOptions;
+	/** A map of node identifiers to Node instances. */
 	public nodes: Map<string, Node>;
+	/** A map of guild IDs to Player instances. */
 	public players: Map<string, Player>;
 
+	/** The ID of the bot. */
 	public userId: string | null;
-	public version: string;
-	public isActivated: boolean;
-	public send: (_: unknown) => void;
+	/** A boolean indicating if the library has been initialized or not. */
+	private isActivated: boolean;
+	/**
+	 * The function used to send packets.
+	 * @param {object} packet - The packet that needs to be sent.
+	 * @returns {void}
+	 */
+	public send: (packet: object) => void;
 
 	constructor(options: AutomataOptions) {
 		super();
-		this._nodes = options.nodes;
 		this.nodes = new Map();
 		this.players = new Map();
+
 		this.options = options;
-		this.version = 'v2.1';
 		this.isActivated = false;
+		this._nodes = options.nodes;
 	}
 
-	/** Initializes the manager. */
+	/**
+	 * Initializes the manager.
+	 * @param {Client} client - The client object.
+	 * @returns {void}
+	 */
 	public init(client: Client): void {
 		this.userId = client.user.id;
 		for (const node of this._nodes) this.addNode(node);
 
 		this.send = (packet: VoicePacket) => {
 			const guild = client.guilds.cache.get(packet.d.guild_id);
-			guild?.shard?.send(packet);
+			guild.shard?.send(packet);
 		};
 
 		client.on('raw', (packet: VoicePacket) => {
@@ -44,31 +56,47 @@ export class Manager extends EventEmitter {
 		this.isActivated = true;
 	}
 
-	/** Adds a new node to the node pool. */
+	/**
+	 * Adds a new node to the node pool.
+	 * @param {NodeOptions} options - The options for the new node.
+	 * @returns {Node} The newly added node.
+	 */
 	public addNode({ name, host, password, port }: NodeOptions): Node {
 		const node = new Node(this, { name, host, password, port }, this.options);
 		this.nodes.set(name, node);
-		node?.connect();
+		node.connect();
 		return node;
 	}
 
-	/** Removes a node from the node pool. */
-	public removeNode(identifier: string) {
+	/**
+	 * Removes a node from the node pool.
+	 * @param {string} identifier - The identifier of the node that will be removed.
+	 * @returns {void}
+	 */
+	public removeNode(identifier: string): void {
 		const node = this.nodes.get(identifier);
 		if (!node) return;
 		node.disconnect();
 		this.nodes.delete(identifier);
 	}
 
-	/** Gets the least used nodes. */
+	/**
+	 * Gets the least used nodes.
+	 * @returns {Node[]} An array of least used nodes.
+	 */
 	public get leastUsedNodes(): Node[] {
 		return [...this.nodes.values()]
 			.filter((node) => node.isConnected)
 			.sort((a, b) => a.penalties - b.penalties);
 	}
 
-	/** Retrives a node. */
-	public getNode(identifier = 'auto'): Node[] | Node {
+	/**
+	 * Retrives a node.
+	 * @param {string} identifier - The identifier of the node to retrieve. Defaults to 'auto'.
+	 * @returns {Node[] | Node} The retrieved node(s).
+	 * @throws {Error} If there are no available nodes or the provided node identifier is not found.
+	 */
+	public getNode(identifier: string): Node[] | Node {
 		if (!this.nodes.size) throw new Error('There aren\'t any available nodes.');
 		if (identifier === 'auto') return this.leastUsedNodes;
 
@@ -78,38 +106,48 @@ export class Manager extends EventEmitter {
 		return node;
 	}
 
-	/** Creates a new player instance for the specified guild, and connects to the least used node based on the provided region or overall system load. */
+	/**
+	 * Creates a new player instance for the specified guild and connects to the least used node based on the provided region or overall system load.
+	 * @param {ConnectionOptions} options - The options for creating the player.
+	 * @returns {Player} The created player.
+	 * @throws {Error} If Automata was not initialized or there are no available nodes.
+	 */
 	public create(options: ConnectionOptions): Player {
 		if (!this.isActivated) throw new Error(
 			'Automata was not initialized in your ready event. Please initiate it by using the <AutomataManager>.init function.',
 		);
 
-		const player = this.players.get(options.guildId);
-		if (player) {
-			const node = this.nodes.get(this.leastUsedNodes[0].options.name);
-			if (!node) throw new Error('There aren\'t any nodes available.');
+		let player = this.players.get(options.guildId);
+
+		if (!player) {
+			if (this.leastUsedNodes.length === 0) throw new Error('There aren\'t any nodes available.');
+
+			const foundNode = this.nodes.get(options.region
+				? this.leastUsedNodes.find((node) => node.regions.includes(options.region.toLowerCase()))?.options.name
+				: this.leastUsedNodes[0].options.name);
+
+			if (!foundNode) throw new Error('There aren\'t any nodes available.');
+
+			player = this.createPlayer(foundNode, options);
 		}
 
-		if (this.leastUsedNodes.length === 0) throw new Error('There aren\'t any nodes available.');
-
-		const foundNode = this.nodes.get(options.region
-			? this.leastUsedNodes.find((node) => node.regions.includes(options.region.toLowerCase()))?.options.name
-			: this.leastUsedNodes[0].options.name);
-
-		if (!foundNode) throw new Error('There aren\'t any nodes available.');
-
-		return this.createPlayer(foundNode, options);
+		return player;
 	}
 
-	/** Sends packet updates. */
-	private packetUpdate(packet: VoicePacket) {
+	/**
+	 * Sends packet updates.
+	 * @private
+	 * @param {VoicePacket} packet - The voice packet that is received.
+	 * @returns {void}
+	 */
+	private packetUpdate(packet: VoicePacket): void {
 		if (!['VOICE_STATE_UPDATE', 'VOICE_SERVER_UPDATE'].includes(packet.t)) return;
 		const player = this.players.get(packet.d.guild_id);
 		if (!player) return;
 
 		switch (packet.t) {
 		case 'VOICE_SERVER_UPDATE':
-			player.connection.setServersUpdate(packet.d);
+			player.connection.setServersUpdate(packet.d as ServerUpdatePacket);
 			break;
 		case 'VOICE_STATE_UPDATE':
 			if (packet.d.user_id !== this.userId) return;
@@ -121,7 +159,13 @@ export class Manager extends EventEmitter {
 		}
 	}
 
-	/** Creates a new player using the node and options provided by the create() function. */
+	/**
+	 * Creates a new player using the node and options provided by the create() function.
+	 * @private
+	 * @param {Node} node - The node to create the player with.
+	 * @param {ConnectionOptions} options - THe options for creating the player.
+	 * @returns {Player} The created player.
+	 */
 	private createPlayer(node: Node, options: ConnectionOptions): Player {
 		const player = new Player(this, node, options);
 		this.players.set(options.guildId, player);
@@ -129,12 +173,22 @@ export class Manager extends EventEmitter {
 		return player;
 	}
 
-	/** Removes a connection. */
-	public removeConnection(guildId: string) {
+	/**
+	 * Removes a connection.
+	 * @param {string} guildId - The ID of the guild to remove the connection from.
+	 * @returns {void}
+	 */
+	public removeConnection(guildId: string): void {
 		this.players.get(guildId)?.destroy();
 	}
 
-	/** Resolves the provided query. */
+	/**
+	 * Resolves the provided query.
+	 * @param {ResolveOptions} options - The options for resolving the query.
+	 * @param {Node} node - The node to use for resolving. Defaults to the least used node.
+	 * @returns {Promise<ResolveResult>} A promise that returns the loadType, mapped tracks and playlist info (when possible).
+	 * @throws {Error} If Automata has not been initialized or there are no available nodes.
+	 */
 	public async resolve({ query, source, requester }: ResolveOptions, node?: Node): Promise<ResolveResult> {
 		if (!this.isActivated) throw new Error('Automata has not been initialized. Initiate Automata using the <Manager>.init() function in your ready.js.');
 
@@ -155,37 +209,59 @@ export class Manager extends EventEmitter {
 		return finalResult;
 	}
 
-	/** Sends a GET request to the Lavalink node to decode the provided track. */
-	async decodeTrack(track: string, node?: Node): Promise<unknown> {
+	/**
+	 * Sends a GET request to the Lavalink node to decode the provided track.
+	 * @param {string} track - The track to decode.
+	 * @param {Node} node - The node to send the request to. Defaults to the least used node.
+	 * @returns {Promise<unknown>} A promise that resolves to the decoded track.
+	 */
+	public async decodeTrack(track: string, node?: Node): Promise<unknown> {
 		const targetNode = node ?? this.leastUsedNodes[0];
 		const request = await targetNode.rest.get(
 			`/v3/decodetrack?encodedTrack=${encodeURIComponent(track)}`);
 		return request;
 	}
 
-	/** Sends a POST request to the Lavalink node to decode the provided tracks. */
-	async decodeTracks(tracks: string[], node?: Node): Promise<unknown> {
+	/**
+	 * Sends a POST request to the Lavalink node to decode the provided tracks.
+	 * @param {string[]} tracks - The tracks to decode.
+	 * @param {Node} node - The node to send the request to. Defaults to the least used node.
+	 * @returns {Promise<unknown>} A promise that resolves to the decoded tracks.
+	 */
+	public async decodeTracks(tracks: string[], node?: Node): Promise<unknown> {
 		const targetNode = node ?? this.leastUsedNodes[0];
 		const request = await targetNode.rest.post('/v3/decodetracks', tracks);
 		return request;
 	}
 
-	/** Sends a GET request to the Lavalink node to get information regarding the node. */
-	async getLavalinkInfo(name: string): Promise<unknown> {
+	/**
+ 	 * Sends a GET request to the Lavalink node to get information regarding the node.
+ 	 * @param {string} name - The name of the node.
+ 	 * @returns {Promise<unknown>} A promise that resolves to the information regarding the node.
+ 	 */
+	public async getLavalinkInfo(name: string): Promise<unknown> {
 		const node = this.nodes.get(name);
 		const request = await node.rest.get('/v3/info');
 		return request;
 	}
 
-	/** Sends a GET request to the Lavalink node to get information regarding the status of the node. */
-	async getLavalinkStatus(name: string): Promise<unknown> {
+	/**
+ 	 * Sends a GET request to the Lavalink node to get information regarding the status of the node.
+ 	 * @param {string} name - The name of the node.
+ 	 * @returns {Promise<unknown>} A promise that resolves to the status information of the node.
+	 */
+	public async getLavalinkStatus(name: string): Promise<unknown> {
 		const node = this.nodes.get(name);
 		const request = await node.rest.get('/v3/stats');
 		return request;
 	}
 
-	/** Retrieves the player from a server using the provided guildId of the specific server. */
-	get(guildId: string) {
+	/**
+ 	 * Retrieves the player from a server using the provided guildId of the specific server.
+ 	 * @param {string} guildId - The ID of the guild.
+ 	 * @returns {Player | undefined} The retrieved player or undefined if not found.
+ 	 */
+	public get(guildId: string): Player | undefined {
 		return this.players.get(guildId);
 	}
 }
@@ -354,13 +430,47 @@ export declare interface Manager {
 	): this;
 }
 
-interface VoicePacket {
-  op: number;
-  t: string;
-  d: {
-    guild_id: string;
-    user_id: string;
-    endpoint: string;
-    token: string;
-  }
+export interface VoicePacket {
+	/** The name of the event. */
+	t?: string;
+	d?: {
+		/** The ID of the server where the event occured. */
+		guild_id?: string;
+		/** The ID of the player. */
+		user_id?: string;
+		/** The ID of the channel that the player is currently connected to. */
+		channel_id?: string;
+		/** A boolean that indicates if the player has deafened itself. */
+		self_deaf?: boolean;
+		/** A boolean that indicates if the player has muted itself. */
+		self_mute?: boolean;
+		/** The ID of the session. */
+		session_id?: string;
+	}
 }
+
+export interface ServerUpdatePacket {
+	/** The token of the session. */
+	token: string;
+	/** The ID of the guild where the event occured. */
+	guild_id: string;
+	/** The endpoint of the voice server. */
+	endpoint: string;
+}
+
+interface Client {
+    user: {
+        id: string;
+    };
+    guilds: {
+        cache: {
+            get(guildId: string): {
+				shard?: {
+					send(packet: VoicePacket): void;
+				} | undefined;
+			}
+        };
+    };
+    on(eventName: 'raw', callback: (packet: VoicePacket) => void): void;
+}
+
