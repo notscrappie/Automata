@@ -1,14 +1,6 @@
+import { RequestMethod } from '../Utils/Constants';
 import { Node } from './Node';
 import { fetch } from 'undici';
-
-// eslint-disable-next-line no-shadow
-enum RequestMethod {
-	'Get' = 'GET',
-	'Delete' = 'DELETE',
-	'Post' = 'POST',
-	'Patch' = 'PATCH',
-	'Put' = 'PUT',
-  }
 
 export class Rest {
 	private sessionId: string;

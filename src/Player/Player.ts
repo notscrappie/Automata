@@ -1,9 +1,9 @@
 import { Manager, ConnectionOptions } from '../Manager';
-import { Connection } from './Connection';
 import { EventEmitter } from 'events';
 import { Filters } from './Filters';
 import { Node } from '../Node/Node';
 import Queue from '../Guild/Queue';
+import { IVoiceServer } from '../Manager';
 
 /** The main hub for everything regarding audio playback. */
 export class Player extends EventEmitter {
@@ -15,8 +15,6 @@ export class Player extends EventEmitter {
 	public node: Node;
 	/** The connection options for the player. */
 	public options: ConnectionOptions;
-	/** The connection instance for the player. */
-	public connection: Connection;
 	/** The queue of audio tracks. */
 	public queue: Queue;
 	/** The filters applied to the audio. */
@@ -47,6 +45,8 @@ export class Player extends EventEmitter {
 	public isConnected: boolean;
 	/** The current loop the player is on. */
 	public loop: string;
+	/** The voice server information. */
+	public voice: IVoiceServer | null;
 
 	constructor(automata: Manager, node: Node, options: ConnectionOptions) {
 		super();
@@ -54,7 +54,6 @@ export class Player extends EventEmitter {
 		this.automata = automata;
 
 		this.queue = new Queue();
-		this.connection = new Connection(this);
 		this.filters = new Filters(this);
 
 		this.guildId = options.guildId;
@@ -62,6 +61,12 @@ export class Player extends EventEmitter {
 		this.textChannel = options.textChannel;
 		this.deaf = options.deaf ?? false;
 		this.mute = options.mute ?? false;
+
+		this.voice = {
+			sessionId: null,
+			token: null,
+			endpoint: null,
+		};
 
 		this.volume = 100;
 		this.loop = 'NONE';
@@ -154,7 +159,7 @@ export class Player extends EventEmitter {
 	}
 
 	/** Sets the current loop. */
-	public setLoop(mode: Loop): void {
+	public setLoop(mode: Loop): Loop {
 		const validModes = new Set(['NONE', 'TRACK', 'QUEUE']);
 		if (!validModes.has(mode))
 			throw new TypeError(
@@ -162,6 +167,8 @@ export class Player extends EventEmitter {
 			);
 
 		this.loop = mode;
+		console.log(mode);
+		return mode;
 	}
 
 	/** Sets the text channel where event messages (trackStart, trackEnd etc.) will be sent. */
@@ -325,7 +332,7 @@ export class Player extends EventEmitter {
 interface EventInterface {
 	/** The type of the event. */
 	type: string;
-
+	/** The OP code of the event. */
 	code: number;
 	/** The ID of the guild where the event occured. */
 	guildId: string;

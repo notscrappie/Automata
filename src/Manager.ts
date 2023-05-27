@@ -16,7 +16,6 @@ export class Manager extends EventEmitter {
 
 	/** The ID of the bot. */
 	public userId: string | null;
-	/** A boolean indicating if the library has been initialized or not. */
 	private isActivated: boolean;
 	/**
 	 * The function used to send packets.
@@ -147,12 +146,31 @@ export class Manager extends EventEmitter {
 
 		switch (packet.t) {
 		case 'VOICE_SERVER_UPDATE':
-			player.connection.setServersUpdate(packet.d as ServerUpdatePacket);
+			// eslint-disable-next-line no-case-declarations
+			const serverPacket = packet.d as ServerUpdatePacket;
+			if (!serverPacket.endpoint) throw new Error('Automata · No session ID found.');
+
+			player.voice.endpoint = serverPacket.endpoint;
+			player.voice.token = serverPacket.token;
+
+			player.node.rest.updatePlayer({
+				guildId: player.guildId,
+				data: { voice: player.voice },
+			});
+
 			break;
 		case 'VOICE_STATE_UPDATE':
-			if (packet.d.user_id !== this.userId) return;
-			player.connection.setStateUpdate(packet.d);
-			if (player.isPaused) player.pause(false);
+			// eslint-disable-next-line no-case-declarations
+			const voicePacket = packet as VoicePacket;
+			if (voicePacket.d.user_id !== this.userId) return;
+			if (!voicePacket.d.channel_id) player.destroy();
+
+			if (player?.voiceChannel && voicePacket.d.channel_id && player?.voiceChannel !== voicePacket.d.channel_id)
+				player.voiceChannel = voicePacket.d.channel_id;
+
+			player.deaf = voicePacket.d.self_deaf ?? true;
+			player.mute = voicePacket.d.self_mute ?? false;
+			player.voice.sessionId = voicePacket.d.session_id ?? null;
 			break;
 		default:
 			break;
@@ -171,15 +189,6 @@ export class Manager extends EventEmitter {
 		this.players.set(options.guildId, player);
 		player.connect(options);
 		return player;
-	}
-
-	/**
-	 * Removes a connection.
-	 * @param {string} guildId - The ID of the guild to remove the connection from.
-	 * @returns {void}
-	 */
-	public removeConnection(guildId: string): void {
-		this.players.get(guildId)?.destroy();
 	}
 
 	/**
@@ -210,59 +219,14 @@ export class Manager extends EventEmitter {
 	}
 
 	/**
-	 * Sends a GET request to the Lavalink node to decode the provided track.
-	 * @param {string} track - The track to decode.
-	 * @param {Node} node - The node to send the request to. Defaults to the least used node.
-	 * @returns {Promise<unknown>} A promise that resolves to the decoded track.
-	 */
-	public async decodeTrack(track: string, node?: Node): Promise<unknown> {
-		const targetNode = node ?? this.leastUsedNodes[0];
-		const request = await targetNode.rest.get(
-			`/v3/decodetrack?encodedTrack=${encodeURIComponent(track)}`);
-		return request;
-	}
-
-	/**
-	 * Sends a POST request to the Lavalink node to decode the provided tracks.
-	 * @param {string[]} tracks - The tracks to decode.
-	 * @param {Node} node - The node to send the request to. Defaults to the least used node.
-	 * @returns {Promise<unknown>} A promise that resolves to the decoded tracks.
-	 */
-	public async decodeTracks(tracks: string[], node?: Node): Promise<unknown> {
-		const targetNode = node ?? this.leastUsedNodes[0];
-		const request = await targetNode.rest.post('/v3/decodetracks', tracks);
-		return request;
-	}
-
-	/**
  	 * Sends a GET request to the Lavalink node to get information regarding the node.
  	 * @param {string} name - The name of the node.
- 	 * @returns {Promise<unknown>} A promise that resolves to the information regarding the node.
+ 	 * @returns {Promise<NodeStats>} A promise that resolves to the information regarding the node.
  	 */
-	public async getLavalinkInfo(name: string): Promise<unknown> {
+	public async getLavalinkInfo(name: string): Promise<NodeStats> {
 		const node = this.nodes.get(name);
-		const request = await node.rest.get('/v3/info');
+		const request = await node.rest.get('/v3/stats') as NodeStats;
 		return request;
-	}
-
-	/**
- 	 * Sends a GET request to the Lavalink node to get information regarding the status of the node.
- 	 * @param {string} name - The name of the node.
- 	 * @returns {Promise<unknown>} A promise that resolves to the status information of the node.
-	 */
-	public async getLavalinkStatus(name: string): Promise<unknown> {
-		const node = this.nodes.get(name);
-		const request = await node.rest.get('/v3/stats');
-		return request;
-	}
-
-	/**
- 	 * Retrieves the player from a server using the provided guildId of the specific server.
- 	 * @param {string} guildId - The ID of the guild.
- 	 * @returns {Player | undefined} The retrieved player or undefined if not found.
- 	 */
-	public get(guildId: string): Player | undefined {
-		return this.players.get(guildId);
 	}
 }
 
@@ -474,3 +438,44 @@ interface Client {
     on(eventName: 'raw', callback: (packet: VoicePacket) => void): void;
 }
 
+export interface NodeStats {
+	players: number;
+	playingPlayers: number;
+	memory: {
+		reservable: number;
+		used: number;
+		free: number;
+		allocated: number;
+	};
+	frameStats: {
+		sent: number;
+		deficit: number;
+		nulled: number;
+	};
+	cpu: {
+		cores: number;
+		systemLoad: number;
+		lavalinkLoad: number;
+	};
+	uptime: number;
+}
+
+export interface IVoiceServer {
+	/** The endpoint of the voice server. */
+  token: string;
+  /** The session ID of the voice server. */
+  sessionId: string;
+  /** The endpoint of the voice server. */
+  endpoint: string;
+}
+
+export interface StateUpdate {
+	/** The ID of the channel that the player is currently connected to. */
+	channel_id?: string;
+	/** A boolean that indicates if the player has deafened itself. */
+	self_deaf?: boolean;
+	/** A boolean that indicates if the player has muted itself. */
+	self_mute?: boolean;
+	/** The ID of the session. */
+	session_id?: string;
+}

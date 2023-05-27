@@ -85,4 +85,13 @@ const vaporwaveEqualizer: Band[] = [
 	{ bands: 13, gain: 0.15 },
 ];
 
-export { bassBoostEqualizer, softEqualizer, tvEqualizer, trebleBassEqualizer, vaporwaveEqualizer };
+// eslint-disable-next-line no-shadow
+enum RequestMethod {
+	'Get' = 'GET',
+	'Delete' = 'DELETE',
+	'Post' = 'POST',
+	'Patch' = 'PATCH',
+	'Put' = 'PUT',
+}
+
+export { bassBoostEqualizer, softEqualizer, tvEqualizer, trebleBassEqualizer, vaporwaveEqualizer, RequestMethod };

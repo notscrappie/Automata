@@ -1,6 +1,7 @@
 import { Manager, AutomataOptions } from '../Manager';
 import { WebSocket } from 'ws';
 import { Rest } from './Rest';
+import { NodeStats } from '../Manager';
 
 export class Node {
 	private readonly automata: Manager;
@@ -180,26 +181,4 @@ export interface NodeOptions {
 	secure?: boolean;
 	/** Allows you to set this node to be used across specific regions. */
 	region?: string[];
-}
-
-interface NodeStats {
-  players: number;
-  playingPlayers: number;
-  memory: {
-    reservable: number;
-    used: number;
-    free: number;
-    allocated: number;
-  };
-  frameStats: {
-    sent: number;
-    deficit: number;
-    nulled: number;
-  };
-  cpu: {
-    cores: number;
-    systemLoad: number;
-    lavalinkLoad: number;
-  };
-  uptime: number;
 }
