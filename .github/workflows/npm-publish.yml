@@ -15,22 +15,33 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node v16
+        uses: actions/setup-node@v3
         with:
           node-version: 16
-      - run: npm i
-      - run: npm run build
 
-      - name: Create build branch
+      - name: Install Packages
+        run: npm i
+        
+      - name: Build Automata
+        run: npm run build
+
+      - name: Push built version to build branch
         run: |
           git config --global user.email "${GITHUB_EMAIL}"
           git config --global user.name "${GITHUB_USERNAME}"
           git pull origin build --rebase --autostash
           git checkout -B build
+          git rm -r --cached .
           git add -f ./dist
-          git commit -m "build for latest changes"
-          git push origin build
+          git reset HEAD package.json
+          git reset HEAD LICENSE
+          git reset HEAD README.md
+          git commit -m "Build for latest changes"
+          git push --force origin build
         env:
           GITHUB_USERNAME: scrappie
           GITHUB_EMAIL: ${{ secrets.EMAIL }}
