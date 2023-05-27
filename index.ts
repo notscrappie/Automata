@@ -1,5 +1,4 @@
 export * from './src/Manager';
-export * from './src/Player/Connection';
 export * from './src/Player/Player';
 export * from './src/Node/Node';
 export * from './src/Node/Rest';
