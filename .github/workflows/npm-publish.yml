@@ -46,6 +46,7 @@ jobs:
           GITHUB_USERNAME: scrappie
           GITHUB_EMAIL: ${{ secrets.EMAIL }}
       - name: Publish to NPM
+        if: github.ref == 'refs/heads/build'
         uses: JS-DevTools/npm-publish@v1
         with: 
           token: ${{ secrets.NPM_TOKEN }}
