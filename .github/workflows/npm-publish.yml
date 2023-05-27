@@ -24,7 +24,7 @@ jobs:
           node-version: 16
 
       - name: Install Packages
-        run: npm i
+        run: npm ci
         
       - name: Build Automata
         run: npm run build
@@ -33,7 +33,7 @@ jobs:
         run: |
           git config --global user.email "${GITHUB_EMAIL}"
           git config --global user.name "${GITHUB_USERNAME}"
-          git pull origin build --rebase --autostash
+          git pull origin build --rebase --autostash --strategy-option=theirs
           git checkout -B build
           git rm -r --cached .
           git add -f ./dist
@@ -46,9 +46,8 @@ jobs:
           GITHUB_USERNAME: scrappie
           GITHUB_EMAIL: ${{ secrets.EMAIL }}
       - name: Publish to NPM
-        if: github.ref == 'refs/heads/build'
-        uses: JS-DevTools/npm-publish@v1
-        with: 
-          token: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access=public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
 
