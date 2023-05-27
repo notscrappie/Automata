@@ -15,7 +15,7 @@ The old v1 branch is based on Poru 3.7.2. This branch is based on Poru v4 with f
 # Installation (if you're crazy enough)
 
 ```
-npm install github:shadowrunners/Automata
+npm install @shadowrunners/automata
 ```
 
 ## Example
