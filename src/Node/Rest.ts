@@ -1,23 +1,30 @@
-import { RequestMethod } from '../Utils/Constants';
+import { RequestMethod } from '../Utils/Utils';
 import { Node } from './Node';
 import { fetch } from 'undici';
 
+/** Handles the requests sent to the Lavalink REST API. */
 export class Rest {
+	/** The ID of the current session. */
 	private sessionId: string;
+	/** The password for the Node. */
 	private readonly password: string;
+	/** The URL of the Node. */
 	private readonly url: string;
 
 	constructor(node: Node) {
-		this.url = `http${node.secure ? 's' : ''}://${node.options.host}:${
+		this.url = `http${node.options.secure ? 's' : ''}://${node.options.host}:${
 			node.options.port
 		}`;
 		this.sessionId = node.sessionId;
-		this.password = node.password;
+		this.password = node.options.password;
 	}
 
-	/** Sets the session ID. */
-	public setSessionId(sessionId: string) {
-		this.sessionId = sessionId;
+	/**
+	 * Sets the session ID.
+	 * @returns {string} Returns the session ID.
+	 */
+	public setSessionId(sessionId: string): string {
+		return this.sessionId = sessionId;
 	}
 
 	/** Retrieves all the players that are currently running on the node. */
