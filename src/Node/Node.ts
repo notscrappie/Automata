@@ -4,6 +4,7 @@ import { Manager, AutomataOptions } from '../Manager';
 import { WebSocket } from 'ws';
 import { Rest } from './Rest';
 
+/** Manages the connection between the client and the Lavalink server. */
 export class Node {
 	/** The manager. */
 	protected automata: Manager;
