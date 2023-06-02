@@ -1,51 +1,55 @@
+import { defaultOptions, NodeStats, EventInterface, NodeOptions } from '../Utils/Utils';
+import { validateOptions } from '../Utils/ValidateOptions';
 import { Manager, AutomataOptions } from '../Manager';
 import { WebSocket } from 'ws';
 import { Rest } from './Rest';
-import { NodeStats } from '../Manager';
 
 export class Node {
-	private readonly automata: Manager;
+	/** The manager. */
+	protected automata: Manager;
+	/** The node options. */
 	public readonly options: NodeOptions;
-	public restURL: string;
+	/** The manager options. */
+	private managerOptions: AutomataOptions;
+	/** The Rest URL. */
+	protected restURL: string;
+	/** The socket's URL. */
 	private readonly socketURL: string;
+	/** Indicates whether the client has connected to the node or not. */
 	public isConnected: boolean;
-	public readonly password: string;
-	public secure: boolean;
+	/** The array of regions. */
 	public readonly regions: Array<string>;
+	/** The node's session ID. */
 	public sessionId: string | null;
+	/** The REST instance. */
 	public readonly rest: Rest;
+	/** The WS instance. */
 	private ws: WebSocket | null;
-	private readonly resumeKey: string | null;
-	private readonly resumeTimeout: number;
-	private readonly autoResume: boolean;
-	private readonly reconnectTimeout: number;
-	private readonly reconnectTries: number;
-	private reconnectAttempt: ReturnType<typeof setTimeout>;
+	/** The reconnect attempt. */
+	private reconnectAttempt: NodeJS.Timeout;
+	/** The attempt it's currently on. */
 	private attempt: number;
-	public stats: NodeStats | null;
+	/** The node's stats. */
+	public stats: NodeStats;
 
 	constructor(automata: Manager, node: NodeOptions, options: AutomataOptions) {
-		this.automata = automata;
 		this.options = node;
-		this.restURL = `http${node.secure ? 's' : ''}://${node.host}:${node.port}`;
-		this.socketURL = `${this.secure ? 'wss' : 'ws'}://${node.host}:${node.port}/`;
-		this.password = node.password || 'youshallnotpass';
-		this.secure = node.secure || false;
-		this.regions = node.region || null;
+		this.managerOptions = options;
+		validateOptions(this.options, options);
+
+		this.automata = automata;
 		this.rest = new Rest(this);
-		this.resumeKey = options.resumeKey || null;
-		this.resumeTimeout = options.resumeTimeout || 60;
-		this.reconnectTimeout = options.reconnectTimeout || 5000;
-		this.reconnectTries = options.reconnectTries || 5;
+		this.restURL = `http${node.secure ? 's' : ''}://${node.host}:${node.port}`;
+		this.socketURL = `${node.secure ? 'wss' : 'ws'}://${node.host}:${node.port}/`;
 	}
 
 	/** Connects to the Lavalink server using the WebSocket. */
 	public connect(): void {
 		const headers = Object.assign({
-			Authorization: this.password,
+			Authorization: this.options.password,
 			'User-Id': this.automata.userId,
-			'Client-Name': 'Shadowrunners - Automata Client',
-		}, this.resumeKey && { 'Resume-Key': this.resumeKey });
+			'Client-Name': defaultOptions.clientName,
+		}, this.managerOptions.resumeKey && { 'Resume-Key': this.managerOptions.resumeKey });
 
 		this.ws = new WebSocket(this.socketURL, { headers });
 		this.ws.on('open', this.open.bind(this));
@@ -54,7 +58,7 @@ export class Node {
 		this.ws.on('close', this.close.bind(this));
 	}
 
-	/** Sends the payload to the Lavalink server. */
+	/** Sends the payload to the Node. */
 	public send(payload: unknown): void {
 		const data = JSON.stringify(payload);
 		try {
@@ -66,10 +70,10 @@ export class Node {
 		}
 	}
 
-	/** Reconnects the client to the Lavalink server. */
+	/** Reconnects the client to the Node. */
 	public reconnect(): void {
 		this.reconnectAttempt = setTimeout(() => {
-			if (this.attempt > this.reconnectTries) this.automata.emit('nodeError', this);
+			if (this.attempt > this.managerOptions.reconnectTries) this.automata.emit('nodeError', this);
 
 			this.isConnected = false;
 			this.ws?.removeAllListeners();
@@ -77,15 +81,15 @@ export class Node {
 			this.automata.emit('nodeReconnect', this);
 			this.connect();
 			this.attempt++;
-		}, this.reconnectTimeout);
+		}, this.managerOptions.reconnectTimeout);
 	}
 
-	/** Disconnects the client from the Lavalink server. */
+	/** Disconnects the client from the Node. */
 	public disconnect(): void {
 		if (!this.isConnected) return;
 
 		this.automata.players.forEach((player) => {
-			if (player.node === this) player.AutoMoveNode();
+			player.AutoMoveNode();
 		});
 
 		this.ws.close(1000, 'destroy');
@@ -95,7 +99,10 @@ export class Node {
 		this.automata.emit('nodeDisconnect', this);
 	}
 
-	/** Returns the penalty of the current node based on its statistics. */
+	/**
+	 * Returns the penalty of the current node based on its statistics.
+	 * @returns The penalty of the node.
+	 */
 	get penalties(): number {
 		if (!this.isConnected) return 0;
 		return this.stats.players +
@@ -115,11 +122,9 @@ export class Node {
 		this.automata.emit('nodeConnect', this);
 		this.isConnected = true;
 
-		if (this.autoResume) {
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			for (const [_, player] of this.automata.players) {
-				if (player.node === this) player.restart();
-			}
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		for (const [_, player] of this.automata.players) {
+			if (player.node === this) player.restart();
 		}
 	}
 
@@ -140,45 +145,114 @@ export class Node {
 			delete packet.op;
 			this.setStats(packet);
 			break;
+		case 'playerUpdate':
+			if (!player) return;
+
+			player.isConnected = packet.state.connected;
+			player.position = packet.state.position;
+			player.ping = packet.state.ping;
+			player.timestamp = packet.state.time;
+
+			break;
+		case 'event':
+			this.eventHandler(packet);
+			break;
 		case 'ready':
 			this.rest.setSessionId(packet.sessionId);
 			this.sessionId = packet.sessionId;
 
-			if (this.resumeKey)
+			if (this.managerOptions.resumeKey)
 				this.rest.patch(`/v3/sessions/${this.sessionId}`, {
-					resumingKey: this.resumeKey,
-					timeout: this.resumeTimeout,
+					resumingKey: this.managerOptions.resumeKey,
+					timeout: this.managerOptions.resumeTimeout,
 				});
 			break;
 		default:
-			if (player) player.emit(packet.op, packet);
+			this.automata.emit('nodeError', this, new Error(`Unexpected op "${packet.op}" with data: ${payload}`));
 			break;
 		}
 	}
 
 	/** Handles the 'close' event of the WebSocket connection. */
-	private close(event: number): void {
-		this.automata.emit('nodeDisconnect', this, event);
+	private close(event: number): boolean {
+		if (!event) return;
+		return this.automata.emit('nodeDisconnect', this, event);
 	}
 
 	/** Handles the 'error' event of the WebSocket connection. */
-	private error(event: number): void {
+	private error(event: number): boolean {
 		if (!event) return;
-		this.automata.emit('nodeError', this, event);
+		return this.automata.emit('nodeError', this, event);
+	}
+
+	/**
+	 * Handles lavalink related events.
+	 * @param data The event data.
+	 */
+	public eventHandler(data: EventInterface): void {
+		if (!data.guildId) return;
+		const player = this.automata.players.get(data.guildId);
+
+		const eventHandlers: Record<string, () => void> = {
+			TrackStartEvent: () => {
+				player.isPlaying = true;
+				this.automata.emit('trackStart', player, player.queue.current);
+			},
+			TrackEndEvent: () => {
+				if (player.nowPlayingMessage && !player.nowPlayingMessage.deleted)
+					player.nowPlayingMessage.delete();
+
+				player.queue.previous = player.queue.current;
+
+				if (player.loop === 'TRACK') {
+					player.queue.unshift(player.queue.previous);
+					this.automata.emit('trackEnd', player, player.queue.current);
+					return player.play();
+				}
+
+				else if (player.queue.current && player.loop === 'QUEUE') {
+					player.queue.push(player.queue.previous);
+					this.automata.emit('trackEnd', player, player.queue.current, data);
+					return player.play();
+				}
+
+				if (player.queue.length === 0) {
+					player.isPlaying = false;
+					return this.automata.emit('queueEnd', player);
+				}
+				else if (player.queue.length > 0) {
+					this.automata.emit('trackEnd', player, player.queue.current);
+					return player.play();
+				}
+
+				player.isPlaying = false;
+				this.automata.emit('queueEnd', player);
+			},
+			TrackStuckEvent: () => {
+				this.automata.emit('trackStuck', player, player.queue.current, data);
+				return player.stop();
+			},
+			TrackExceptionEvent: () => {
+				this.automata.emit('trackStuck', player, player.queue.current, data);
+				return player.stop();
+			},
+			WebSocketClosedEvent: () => {
+				if ([4015, 4009].includes(data.code)) {
+					this.send({
+						guild_id: data.guildId,
+						channel_id: player.voiceChannel,
+						self_mute: player.options.mute,
+						self_deaf: player.options.deaf,
+					});
+				}
+				this.automata.emit('socketClose', player, player.queue.current, data);
+				player.pause(true);
+			},
+		};
+
+		const eventType = data.type;
+		const handleEvents = eventHandlers[eventType];
+		if (eventHandlers) handleEvents();
 	}
 }
 
-export interface NodeOptions {
-	/** Name of the node. */
-	name: string;
-	/** IP of the node. */
-	host: string;
-	/** Port of the node. */
-	port: number;
-	/** Password of the node. */
-	password: string;
-	/** Requires to be set as true when the node has SSL enabled. Otherwise, it can be left disabled. */
-	secure?: boolean;
-	/** Allows you to set this node to be used across specific regions. */
-	region?: string[];
-}
