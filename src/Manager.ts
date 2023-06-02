@@ -1,7 +1,8 @@
+import { NodeOptions, NodeStats } from './Utils/Utils';
 import { AutomataTrack, TrackData } from './Guild/Track';
-import { Node, NodeOptions } from './Node/Node';
-import { Player } from './Player/Player';
+import { Node } from './Node/Node';
 import { EventEmitter } from 'events';
+import { Player } from './Player/Player';
 
 /** The main hub for interacting with Lavalink via Automata. (shit taken from erela.js's repo, rip erela) */
 export class Manager extends EventEmitter {
@@ -13,7 +14,6 @@ export class Manager extends EventEmitter {
 	public nodes: Map<string, Node>;
 	/** A map of guild IDs to Player instances. */
 	public players: Map<string, Player>;
-
 	/** The ID of the bot. */
 	public userId: string | null;
 	private isActivated: boolean;
@@ -140,14 +140,17 @@ export class Manager extends EventEmitter {
 	 * @returns {void}
 	 */
 	private packetUpdate(packet: VoicePacket): void {
-		if (!['VOICE_STATE_UPDATE', 'VOICE_SERVER_UPDATE'].includes(packet.t)) return;
+		const packetTypes = new Set(['VOICE_STATE_UPDATE', 'VOICE_SERVER_UPDATE']);
+		if (!packetTypes.has(packet.t)) return;
+
 		const player = this.players.get(packet.d.guild_id);
 		if (!player) return;
 
+		const serverPacket = packet.d as ServerUpdatePacket;
+		const voicePacket = packet as VoicePacket;
+
 		switch (packet.t) {
 		case 'VOICE_SERVER_UPDATE':
-			// eslint-disable-next-line no-case-declarations
-			const serverPacket = packet.d as ServerUpdatePacket;
 			if (!serverPacket.endpoint) throw new Error('Automata · No session ID found.');
 
 			player.voice.endpoint = serverPacket.endpoint;
@@ -160,17 +163,17 @@ export class Manager extends EventEmitter {
 
 			break;
 		case 'VOICE_STATE_UPDATE':
-			// eslint-disable-next-line no-case-declarations
-			const voicePacket = packet as VoicePacket;
 			if (voicePacket.d.user_id !== this.userId) return;
-			if (!voicePacket.d.channel_id) player.destroy();
+			if (!voicePacket.d.channel_id) return player.destroy();
 
 			if (player?.voiceChannel && voicePacket.d.channel_id && player?.voiceChannel !== voicePacket.d.channel_id)
 				player.voiceChannel = voicePacket.d.channel_id;
 
-			player.deaf = voicePacket.d.self_deaf ?? true;
-			player.mute = voicePacket.d.self_mute ?? false;
+			player.options.deaf = voicePacket.d.self_deaf ?? true;
+			player.options.mute = voicePacket.d.self_mute ?? false;
 			player.voice.sessionId = voicePacket.d.session_id ?? null;
+
+			if (player.isPaused) player.pause(false);
 			break;
 		default:
 			break;
@@ -181,13 +184,13 @@ export class Manager extends EventEmitter {
 	 * Creates a new player using the node and options provided by the create() function.
 	 * @private
 	 * @param {Node} node - The node to create the player with.
-	 * @param {ConnectionOptions} options - THe options for creating the player.
+	 * @param {ConnectionOptions} options - The options for creating the player.
 	 * @returns {Player} The created player.
 	 */
 	private createPlayer(node: Node, options: ConnectionOptions): Player {
 		const player = new Player(this, node, options);
 		this.players.set(options.guildId, player);
-		player.connect(options);
+		player.connect();
 		return player;
 	}
 
@@ -198,15 +201,11 @@ export class Manager extends EventEmitter {
 	 * @returns {Promise<ResolveResult>} A promise that returns the loadType, mapped tracks and playlist info (when possible).
 	 * @throws {Error} If Automata has not been initialized or there are no available nodes.
 	 */
-	public async resolve({ query, source, requester }: ResolveOptions, node?: Node): Promise<ResolveResult> {
+	public async resolve({ query, source, requester }: ResolveOptions, node: Node = this.leastUsedNodes?.[0]): Promise<ResolveResult> {
 		if (!this.isActivated) throw new Error('Automata has not been initialized. Initiate Automata using the <Manager>.init() function in your ready.js.');
-
-		node = node ?? this.leastUsedNodes?.[0];
 		if (!node) throw Error('There are no available nodes.');
 
-		const regex = /^https?:\/\//;
-		const identifier = regex.test(query) ? query : `${source ?? 'dzsearch'}:${query}`;
-
+		const identifier = /^https?:\/\//.test(query) ? query : `${source ?? 'dzsearch'}:${query}`;
 		const res = await node.rest.get(`/v3/loadtracks?identifier=${encodeURIComponent(identifier)}`) as LavalinkResponse;
 		const mappedTracks = res.tracks.map((track: TrackData) => new AutomataTrack(track, requester)) || [];
 		const finalResult: ResolveResult = {
@@ -271,13 +270,13 @@ export interface AutomataOptions {
 	/** The default platform used by the manager. Default platform is Deezer, by default. */
 	defaultPlatform?: SearchPlatform | string;
 	/** The time the manager will wait before trying to reconnect to a node. */
-	reconnectTimeout?: number;
+	reconnectTimeout: number;
 	/** The amount of times the player will try to reconnect to a node. */
-	reconnectTries?: number;
+	reconnectTries: number;
 	/** The key used to resume the previous session. */
-	resumeKey?: string;
+	resumeKey: string;
 	/** The time the manager will wait before trying to resume the previous session. */
-	resumeTimeout?: number;
+	resumeTimeout: number;
 }
 
 export interface ConnectionOptions {
@@ -438,30 +437,8 @@ interface Client {
     on(eventName: 'raw', callback: (packet: VoicePacket) => void): void;
 }
 
-export interface NodeStats {
-	players: number;
-	playingPlayers: number;
-	memory: {
-		reservable: number;
-		used: number;
-		free: number;
-		allocated: number;
-	};
-	frameStats: {
-		sent: number;
-		deficit: number;
-		nulled: number;
-	};
-	cpu: {
-		cores: number;
-		systemLoad: number;
-		lavalinkLoad: number;
-	};
-	uptime: number;
-}
-
 export interface IVoiceServer {
-	/** The endpoint of the voice server. */
+  /** The endpoint of the voice server. */
   token: string;
   /** The session ID of the voice server. */
   sessionId: string;

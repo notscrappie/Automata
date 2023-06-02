@@ -1,6 +1,4 @@
-import { Band } from '../Player/Filters';
-
-const bassBoostEqualizer: Band[] = [
+export const bassBoostEqualizer: Band[] = [
 	{ bands: 0, gain: 0.65 },
 	{ bands: 1, gain: 0.45 },
 	{ bands: 2, gain: -0.45 },
@@ -17,7 +15,7 @@ const bassBoostEqualizer: Band[] = [
 	{ bands: 13, gain: 0 },
 ];
 
-const softEqualizer: Band[] = [
+export const softEqualizer: Band[] = [
 	{ bands: 0, gain: 0 },
 	{ bands: 1, gain: 0 },
 	{ bands: 2, gain: 0 },
@@ -34,7 +32,7 @@ const softEqualizer: Band[] = [
 	{ bands: 13, gain: -0.25 },
 ];
 
-const tvEqualizer: Band[] = [
+export const tvEqualizer: Band[] = [
 	{ bands: 0, gain: 0 },
 	{ bands: 1, gain: 0 },
 	{ bands: 2, gain: 0 },
@@ -51,7 +49,7 @@ const tvEqualizer: Band[] = [
 	{ bands: 13, gain: 0.65 },
 ];
 
-const trebleBassEqualizer: Band[] = [
+export const trebleBassEqualizer: Band[] = [
 	{ bands: 0, gain: 0.6 },
 	{ bands: 1, gain: 0.67 },
 	{ bands: 2, gain: 0.67 },
@@ -68,7 +66,7 @@ const trebleBassEqualizer: Band[] = [
 	{ bands: 13, gain: 0 },
 ];
 
-const vaporwaveEqualizer: Band[] = [
+export const vaporwaveEqualizer: Band[] = [
 	{ bands: 0, gain: 0 },
 	{ bands: 1, gain: 0 },
 	{ bands: 2, gain: 0 },
@@ -85,13 +83,10 @@ const vaporwaveEqualizer: Band[] = [
 	{ bands: 13, gain: 0.15 },
 ];
 
-// eslint-disable-next-line no-shadow
-enum RequestMethod {
-	'Get' = 'GET',
-	'Delete' = 'DELETE',
-	'Post' = 'POST',
-	'Patch' = 'PATCH',
-	'Put' = 'PUT',
+/** Represents an equalizer band. */
+export interface Band {
+	/** The index of the equalizer band. */
+	bands: number;
+	/** The gain value of the equalizer band. */
+	gain: number;
 }
-
-export { bassBoostEqualizer, softEqualizer, tvEqualizer, trebleBassEqualizer, vaporwaveEqualizer, RequestMethod };

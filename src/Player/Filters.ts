@@ -1,4 +1,4 @@
-import { bassBoostEqualizer, softEqualizer, trebleBassEqualizer, tvEqualizer, vaporwaveEqualizer } from '../Utils/Constants';
+import { Band, bassBoostEqualizer, softEqualizer, tvEqualizer, trebleBassEqualizer, vaporwaveEqualizer } from '../Utils/EQPresets';
 import { Player } from './Player';
 
 export class Filters {
@@ -19,7 +19,7 @@ export class Filters {
 	 * @param bands - The equalizer bands.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	 */
-	public setEqualizer(bands?: Band[]): Filters {
+	public setEqualizer(bands?: Band[]): this {
 		this.equalizer = bands;
 		this.updateFilters();
 		return this;
@@ -29,7 +29,7 @@ export class Filters {
 	 * Applies the 8D filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	*/
-	public eightD(): Filters {
+	public eightD(): this {
 		return this.setRotation({ rotationHz: 0.2 });
 	}
 
@@ -37,7 +37,7 @@ export class Filters {
 	 * Applies the bass boost filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	*/
-	public bassBoost(): Filters {
+	public bassBoost(): this {
 		return this.setEqualizer(bassBoostEqualizer);
 	}
 
@@ -45,7 +45,7 @@ export class Filters {
 	 * Applies the nightcore filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	*/
-	public nightcore(): Filters {
+	public nightcore(): this {
 		return this.setTimescale({
 			speed: 1.1,
 			pitch: 1.125,
@@ -57,7 +57,7 @@ export class Filters {
 	 * Applies the slow motion filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	*/
-	public slowmo(): Filters {
+	public slowmo(): this {
 		return this.setTimescale({
 			speed: 0.5,
 			pitch: 1.0,
@@ -69,7 +69,7 @@ export class Filters {
 	 * Applies the soft filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	 */
-	public soft(): Filters {
+	public soft(): this {
 		return this.setEqualizer(softEqualizer);
 	}
 
@@ -77,7 +77,7 @@ export class Filters {
 	 * Applies the TV filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	*/
-	public tv(): Filters {
+	public tv(): this {
 		return this.setEqualizer(tvEqualizer);
 	}
 
@@ -85,7 +85,7 @@ export class Filters {
 	 * Applies the treble bass filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	*/
-	public trebleBass(): Filters {
+	public trebleBass(): this {
 		return this.setEqualizer(trebleBassEqualizer);
 	}
 
@@ -93,7 +93,7 @@ export class Filters {
 	 * Applies the vaporwave filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	*/
-	public vaporwave(): Filters {
+	public vaporwave(): this {
 		this.setEqualizer(vaporwaveEqualizer);
 		return this.setTimescale({ pitch: 0.55 });
 	}
@@ -102,7 +102,7 @@ export class Filters {
 	 * Applies the karaoke options specified by the filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	 */
-	public setKaraoke(karaoke?: karaokeOptions): Filters {
+	public setKaraoke(karaoke?: karaokeOptions): this {
 		this.karaoke = karaoke || null;
 		this.updateFilters();
 
@@ -113,7 +113,7 @@ export class Filters {
 	 * Applies the timescale options specified by the filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	 */
-	public setTimescale(timescale?: timescaleOptions): Filters {
+	public setTimescale(timescale?: timescaleOptions): this {
 		this.timescale = timescale || null;
 		this.updateFilters();
 
@@ -124,7 +124,7 @@ export class Filters {
 	 * Applies the vibrato options specified by the filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	 */
-	public setVibrato(vibrato?: vibratoOptions): Filters {
+	public setVibrato(vibrato?: vibratoOptions): this {
 		this.vibrato = vibrato || null;
 		this.updateFilters();
 		return this;
@@ -134,7 +134,7 @@ export class Filters {
 	 * Applies the rotation options specified by the filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	 */
-	public setRotation(rotation?: rotationOptions): Filters {
+	public setRotation(rotation?: rotationOptions): this {
 		this.rotation = rotation || null;
 		this.updateFilters();
 
@@ -145,7 +145,7 @@ export class Filters {
 	 * Clears the filters.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	 */
-	public clearFilters(): Filters {
+	public clearFilters(): this {
 		this.player.filters = new Filters(this.player);
 		this.updateFilters();
 		return this;
@@ -155,11 +155,11 @@ export class Filters {
      * Updates the filters.
      * @returns The updated Filters instance applied to the currently playing track.
      */
-	public updateFilters(): Filters {
+	public updateFilters(): this {
 		const { equalizer, karaoke, timescale, vibrato, rotation, volume } = this;
 
 		this.player.node.rest.updatePlayer({
-			guildId: this.player.guildId,
+			guildId: this.player.options.guildId,
 			data: {
 				filters: {
 					volume, equalizer, karaoke, timescale, vibrato, rotation,
@@ -169,14 +169,6 @@ export class Filters {
 
 		return this;
 	}
-}
-
-/** Represents an equalizer band. */
-export interface Band {
-	/** The index of the equalizer band. */
-	bands: number;
-	/** The gain value of the equalizer band. */
-	gain: number;
 }
 
 /** Options for adjusting the timescale of audio. */

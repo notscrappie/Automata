@@ -7,7 +7,7 @@ export default class Queue extends Array<AutomataTrack> {
 	}
 
 	/** Gets the first song in the queue. */
-	public first() {
+	public get first(): AutomataTrack | 0 {
 		return this ? this[0] : 0;
 	}
 
@@ -15,7 +15,7 @@ export default class Queue extends Array<AutomataTrack> {
 	 * Adds a new track to the queue.
 	 * @param track - The track that will be added to the queue.
 	 */
-	public add(track: AutomataTrack): Queue {
+	public add(track: AutomataTrack): this {
 		this.push(track);
 		return this;
 	}
