@@ -19,8 +19,6 @@ export class AutomataTrack {
 	public sourceName: string;
 	/** The requester of the track. */
 	public requester: unknown;
-	/** The load type of the track. */
-	public loadType: string;
 
 	/**
    	 * Creates a new AutomataTrack instance.
