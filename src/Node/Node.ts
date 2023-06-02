@@ -189,7 +189,7 @@ export class Node {
 	 * Handles lavalink related events.
 	 * @param data The event data.
 	 */
-	public eventHandler(data: EventInterface): void {
+	private eventHandler(data: EventInterface): void {
 		if (!data.guildId) return;
 		const player = this.automata.players.get(data.guildId);
 
