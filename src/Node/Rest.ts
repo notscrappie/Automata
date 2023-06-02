@@ -28,7 +28,7 @@ export class Rest {
 	}
 
 	/** Retrieves all the players that are currently running on the node. */
-	public getAllPlayers() {
+	public getAllPlayers(): Promise<unknown> {
 		return this.get(`/v3/sessions/${this.sessionId}/players`);
 	}
 
@@ -45,7 +45,7 @@ export class Rest {
 	}
 
 	/* Sends a GET request to the specified endpoint and returns the response data. */
-	public async get(path: RouteLike) {
+	public async get(path: RouteLike): Promise<unknown> {
 		try {
 			const req = await fetch(this.url + path, {
 				method: RequestMethod.Get,
@@ -64,7 +64,7 @@ export class Rest {
 	}
 
 	/* Sends a PATCH request to the specified endpoint and returns the response data. */
-	public async patch(endpoint: RouteLike, body: unknown) {
+	public async patch(endpoint: RouteLike, body: unknown): Promise<unknown> {
 		try {
 			const req = await fetch(this.url + endpoint, {
 				method: RequestMethod.Patch,
@@ -84,7 +84,7 @@ export class Rest {
 	}
 
 	/* Sends a POST request to the specified endpoint and returns the response data. */
-	public async post(endpoint: RouteLike, body: unknown) {
+	public async post(endpoint: RouteLike, body: unknown): Promise<unknown> {
 		try {
 			const req = await fetch(this.url + endpoint, {
 				method: RequestMethod.Post,
@@ -104,7 +104,7 @@ export class Rest {
 	}
 
 	/* Sends a DELETE request to the specified endpoint and returns the response data. */
-	public async delete(endpoint: RouteLike) {
+	public async delete(endpoint: RouteLike): Promise<unknown> {
 		try {
 			const req = await fetch(this.url + endpoint, {
 				method: RequestMethod.Delete,
