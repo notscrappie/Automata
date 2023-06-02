@@ -1,8 +1,6 @@
-import packageInfo from '../../package.json';
-
 export const defaultOptions = {
 	/** The name of the client that will be connecting to the node. */
-	clientName: `automata@shadowrunners/${packageInfo.version}`,
+	clientName: 'automata@shadowrunners',
 };
 
 export interface NodeStats {
