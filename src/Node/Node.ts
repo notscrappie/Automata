@@ -247,7 +247,6 @@ export class Node {
 					});
 				}
 				this.automata.emit('socketClose', player, player.queue.current, data);
-				player.pause(true);
 			},
 		};
 
