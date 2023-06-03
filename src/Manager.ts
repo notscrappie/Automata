@@ -371,7 +371,7 @@ export interface AutomataEvents {
 	 * Emitted when the connection between the WebSocket and Discord voice servers drops.
 	 * @eventProperty
 	 */
-	socketClose: (player: Player, track: AutomataTrack, data: unknown) => void;
+	socketClose: (player: Player, data: unknown) => void;
 }
 
 export declare interface Manager {

@@ -246,7 +246,7 @@ export class Node {
 						self_deaf: player.options.deaf,
 					});
 				}
-				this.automata.emit('socketClose', player, player.queue.current, data);
+				this.automata.emit('socketClose', player, data);
 			},
 		};
 
