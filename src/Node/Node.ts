@@ -194,14 +194,16 @@ export class Node {
 		if (!data.guildId) return;
 		const player = this.automata.players.get(data.guildId);
 
+		if (!player) return;
+
 		const eventHandlers: Record<string, () => void> = {
 			TrackStartEvent: () => {
 				player.isPlaying = true;
 				this.automata.emit('trackStart', player, player.queue.current);
 			},
 			TrackEndEvent: () => {
-				if (player.nowPlayingMessage && !player.nowPlayingMessage.deleted)
-					player.nowPlayingMessage.delete();
+				if (player?.nowPlayingMessage && !player?.nowPlayingMessage?.deleted)
+					player?.nowPlayingMessage?.delete();
 
 				player.queue.previous = player.queue.current;
 
