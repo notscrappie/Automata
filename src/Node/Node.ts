@@ -41,7 +41,7 @@ export class Node {
 		this.automata = automata;
 		this.rest = new Rest(this);
 		this.restURL = `http${node.secure ? 's' : ''}://${node.host}:${node.port}`;
-		this.socketURL = `${node.secure ? 'wss' : 'ws'}://${node.host}:${node.port}/`;
+		this.socketURL = `${node.secure ? 'wss' : 'ws'}://${node.host}:${node.port}/v4/websocket`;
 	}
 
 	/** Connects to the Lavalink server using the WebSocket. */
@@ -50,7 +50,7 @@ export class Node {
 			Authorization: this.options.password,
 			'User-Id': this.automata.userId,
 			'Client-Name': defaultOptions.clientName,
-		}, this.managerOptions.resumeKey && { 'Resume-Key': this.managerOptions.resumeKey });
+		});
 
 		this.ws = new WebSocket(this.socketURL, { headers });
 		this.ws.on('open', this.open.bind(this));
@@ -130,8 +130,9 @@ export class Node {
 	}
 
 	/** Sets the stats. */
-	private setStats(packet: NodeStats): void {
+	private setStats(packet: NodeStats) {
 		this.stats = packet;
+		return packet;
 	}
 
 	/** Handles the message received from the Lavalink node. */
@@ -162,9 +163,9 @@ export class Node {
 			this.rest.setSessionId(packet.sessionId);
 			this.sessionId = packet.sessionId;
 
-			if (this.managerOptions.resumeKey)
-				this.rest.patch(`/v3/sessions/${this.sessionId}`, {
-					resumingKey: this.managerOptions.resumeKey,
+			if (this.managerOptions.resumeStatus)
+				this.rest.patch(`/v4/sessions/${this.sessionId}`, {
+					resuming: this.managerOptions.resumeStatus,
 					timeout: this.managerOptions.resumeTimeout,
 				});
 			break;

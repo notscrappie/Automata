@@ -36,10 +36,10 @@ export function validateOptions(options: NodeOptions, secondaryOptions: Automata
 		throw new TypeError('Node option "name" must be a non-empty string.');
 
 	if (
-		typeof secondaryOptions.resumeKey !== 'undefined' &&
-		typeof secondaryOptions.resumeKey !== 'string'
+		typeof secondaryOptions.resumeStatus !== 'undefined' &&
+		typeof secondaryOptions.resumeStatus !== 'boolean'
 	)
-		throw new TypeError('Manager option "resumeKey" must be a non-empty string.');
+		throw new TypeError('Manager option "resumeKey" must be a boolean.');
 
 	if (
 		typeof secondaryOptions.resumeTimeout !== 'undefined' &&

@@ -78,6 +78,19 @@ export class Player {
 	}
 
 	/**
+	 * Plays the previous track.
+	 */
+	public playPrevious(): void {
+		// Should return an error.
+		if (!this.queue.previous) throw new ReferenceError('There is no previous track. Probably because you either haven\'t queued anything yet or the currently playing song hasn\'t finished playing.');
+
+		if (this.queue.current) this.queue.unshift(this.queue.previous);
+		this.play();
+
+		this.queue.previous = null;
+	}
+
+	/**
 	 * Connects to the user's voice channel.
 	 * @param options - The connection options.
 	 */
@@ -153,7 +166,8 @@ export class Player {
 
 	/** Sets the now playing message. */
 	public setNowPlayingMessage(message: NowPlayingMessage): NowPlayingMessage {
-		return this.nowPlayingMessage = message;
+		this.nowPlayingMessage = message;
+		return message;
 	}
 
 	/** Sets the voice channel. */
@@ -164,6 +178,8 @@ export class Player {
 		this.voiceChannel = channel;
 
 		this.connect();
+
+		return channel;
 	}
 
 	/** Disconnects the player. */

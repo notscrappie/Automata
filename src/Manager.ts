@@ -206,12 +206,30 @@ export class Manager extends EventEmitter {
 		if (!node) throw Error('There are no available nodes.');
 
 		const identifier = /^https?:\/\//.test(query) ? query : `${source ?? 'dzsearch'}:${query}`;
-		const res = await node.rest.get(`/v3/loadtracks?identifier=${encodeURIComponent(identifier)}`) as LavalinkResponse;
-		const mappedTracks = res.tracks.map((track: TrackData) => new AutomataTrack(track, requester)) || [];
+		const res = await node.rest.get(`/v4/loadtracks?identifier=${encodeURIComponent(identifier)}`) as LavalinkResponse;
+		console.log(res);
+
+		let mappedTracks: AutomataTrack[] = [];
+
+		switch (res.loadType) {
+			case 'track':
+				const data = res.data as TrackData;
+				const track = new AutomataTrack(data, requester);
+				mappedTracks.push(track);
+				break;
+			case 'playlist':
+				const playlistData = res.data as PlaylistData;
+				const playlist = playlistData.tracks.map((track) => new AutomataTrack(track, requester)) || [];
+				mappedTracks.push(...playlist);
+				break;
+		}
+
+		// const mappedTracks = 
+	
 		const finalResult: ResolveResult = {
 			loadType: res.loadType,
 			tracks: mappedTracks,
-			playlistInfo: res.playlistInfo || undefined,
+			playlist: res.loadType === 'playlist' ? res.data as PlaylistData : undefined,
 		};
 
 		return finalResult;
@@ -224,34 +242,39 @@ export class Manager extends EventEmitter {
  	 */
 	public async getLavalinkInfo(name: string): Promise<NodeStats> {
 		const node = this.nodes.get(name);
-		const request = await node.rest.get('/v3/stats') as NodeStats;
+		const request = await node.rest.get('/v4/stats') as NodeStats;
 		return request;
 	}
 }
 
-interface PlaylistInfo {
-	name: string;
-	selectedTrack?: number;
+/** Represents the data of a playlist. */
+export interface PlaylistData {
+	/** The name of the playlist. */
+	name?: string;
+	/** The array of tracks. */
+	tracks: TrackData[];
 }
 
 interface ResolveResult {
 	loadType: LoadType;
 	tracks: AutomataTrack[];
-	playlistInfo?: PlaylistInfo;
+	/** The playlist data. */
+	playlist: PlaylistData;
 }
 
 interface LavalinkResponse {
-	tracks: TrackData[];
+	/** The load type. */
 	loadType: LoadType;
-	playlistInfo?: PlaylistInfo;
+	/** The data from the Lavalink node. */
+	data: TrackData | PlaylistData;
 }
 
 type LoadType =
-	| 'TRACK_LOADED'
-	| 'PLAYLIST_LOADED'
-	| 'SEARCH_RESULT'
-	| 'NO_MATCHES'
-	| 'LOAD_FAILED'
+	| 'track'
+	| 'playlist'
+	| 'search'
+	| 'empty'
+	| 'error'
 
 type SearchPlatform = 'spsearch' | 'dzsearch' | 'scsearch';
 
@@ -273,8 +296,8 @@ export interface AutomataOptions {
 	reconnectTimeout: number;
 	/** The amount of times the player will try to reconnect to a node. */
 	reconnectTries: number;
-	/** The key used to resume the previous session. */
-	resumeKey: string;
+	/** The boolean that indicates if resuming is enabled or disabled. */
+	resumeStatus: boolean;
 	/** The time the manager will wait before trying to resume the previous session. */
 	resumeTimeout: number;
 }
