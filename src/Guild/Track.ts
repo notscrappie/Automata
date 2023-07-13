@@ -26,17 +26,17 @@ export class AutomataTrack {
 	/** The requester of the track. */
 	requester?: unknown;
 
-	  /**
-   * Creates a new AutomataTrack instance from TrackData.
-   * @param data The track data.
-   * @param requester The requester of the track.
-   */
-	  constructor(data: TrackData, requester: unknown);
-	  /**
-	   * Creates a new AutomataTrack instance from PlaylistData.
-	   * @param data The playlist data.
-	   * @param requester The requester of the track.
-	   */
+	/**
+   	 * Creates a new AutomataTrack instance from TrackData.
+   	 * @param data The track data.
+   	 * @param requester The requester of the track.
+   	*/
+	constructor(data: TrackData, requester: unknown);
+	/**
+	 * Creates a new AutomataTrack instance from PlaylistData.
+	 * @param data The playlist data.
+	 * @param requester The requester of the track.
+	*/
 	  constructor(data: PlaylistData, requester: unknown);
 	  constructor(data: TrackData | PlaylistData, requester: unknown) {
 		if ("tracks" in data) {
@@ -68,6 +68,7 @@ export class AutomataTrack {
 			  isSeekable,
 			  isStream,
 			  sourceName,
+			  artworkUrl,
 			},
 		  } = trackData;
 	
@@ -80,6 +81,7 @@ export class AutomataTrack {
 		  this.isSeekable = isSeekable;
 		  this.isStream = isStream;
 		  this.sourceName = sourceName;
+		  this.artworkUrl = artworkUrl;
 		}
 	
 		this.requester = requester;
