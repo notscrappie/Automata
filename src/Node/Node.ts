@@ -3,6 +3,7 @@ import { validateOptions } from '../Utils/ValidateOptions';
 import { Manager, AutomataOptions } from '../Manager';
 import { WebSocket } from 'ws';
 import { Rest } from './Rest';
+import { Player } from '../Player/Player';
 
 /** Manages the connection between the client and the Lavalink server. */
 export class Node {
@@ -195,65 +196,105 @@ export class Node {
 		if (!data.guildId) return;
 		const player = this.automata.players.get(data.guildId);
 
-		const eventHandlers: Record<string, () => void> = {
-			TrackStartEvent: () => {
-				player.isPlaying = true;
-				this.automata.emit('trackStart', player, player.queue.current);
-			},
-			TrackEndEvent: () => {
-				if (player.nowPlayingMessage && !player.nowPlayingMessage.deleted)
-					player.nowPlayingMessage.delete();
+		switch (data.type) {
+			case 'TrackStartEvent':
+				this.TrackStartEvent(player);
+				break;
+			case 'TrackEndEvent':
+				this.TrackEndEvent(player);
+				break;
+			case 'TrackStuckEvent':
+				this.TrackStuckEvent(player, data);
+				break;
+			case 'TrackExceptionEvent':
+				this.TrackExceptionEvent(player, data);
+				break;
+			case 'WebSocketClosedEvent':
+				this.WebSocketClosedEvent(player, data);
+				break;
+			default:
+				break;
+		}
+	}
 
-				player.queue.previous = player.queue.current;
+	/** 
+	 * Handles the TrackStart event. 
+	 * @param player The player.
+	 * @returns {void}
+	 */
+	private TrackStartEvent(player: Player): void {
+		if (player.loop === 'TRACK') return;
+		
+		player.isPlaying = true;
+		this.automata.emit('trackStart', player, player.queue.current);
+	}
 
-				if (player.loop === 'TRACK') {
-					player.queue.unshift(player.queue.previous);
-					this.automata.emit('trackEnd', player, player.queue.current);
-					return player.play();
-				}
+	/** 
+	 * Handles the TrackEnd event. 
+	 * @param player The player.
+	 * @returns {boolean | void}
+	*/
+	private TrackEndEvent(player: Player): boolean | void {
+		player.queue.previous = player.queue.current;
 
-				else if (player.queue.current && player.loop === 'QUEUE') {
-					player.queue.push(player.queue.previous);
-					this.automata.emit('trackEnd', player, player.queue.current, data);
-					return player.play();
-				}
+		if (player.loop === 'TRACK') {
+			player.queue.unshift(player.queue.previous);
+			return player.play();
+		}
+		else if (player.queue.current && player.loop === 'QUEUE') 
+			player.queue.push(player.queue.previous);
 
-				if (player.queue.length === 0) {
-					player.isPlaying = false;
-					return this.automata.emit('queueEnd', player);
-				}
-				else if (player.queue.length > 0) {
-					this.automata.emit('trackEnd', player, player.queue.current);
-					return player.play();
-				}
+		if (player.nowPlayingMessage && !player.nowPlayingMessage.deleted)
+			player.nowPlayingMessage.delete().catch(() => { 
+				// This is here so DeepSource doesn't fucking complain again.
+			});
+				
+		if (player.queue.length === 0) {
+			player.isPlaying = false;
+			return this.automata.emit('queueEnd', player);
+		} else this.automata.emit('trackEnd', player, player.queue.current);
+		
+		return player.play();
+	}
 
-				player.isPlaying = false;
-				this.automata.emit('queueEnd', player);
-			},
-			TrackStuckEvent: () => {
-				this.automata.emit('trackStuck', player, player.queue.current, data);
-				return player.stop();
-			},
-			TrackExceptionEvent: () => {
-				this.automata.emit('trackStuck', player, player.queue.current, data);
-				return player.stop();
-			},
-			WebSocketClosedEvent: () => {
-				if ([4015, 4009].includes(data.code)) {
-					this.send({
-						guild_id: data.guildId,
-						channel_id: player.voiceChannel,
-						self_mute: player.options.mute,
-						self_deaf: player.options.deaf,
-					});
-				}
-				this.automata.emit('socketClose', player, data);
-			},
-		};
+	/**
+	 * Handles the TrackStuckEvent.
+	 * @param player The player.
+	 * @param data The event data.
+	 * @returns {void}
+	 */
+	private TrackStuckEvent(player: Player, data: EventInterface): void {
+		this.automata.emit('trackStuck', player, player.queue.current, data);
+		return player.stop();
+	}
 
-		const eventType = data.type;
-		const handleEvents = eventHandlers[eventType];
-		if (eventHandlers) handleEvents();
+	/**
+	 * Handles the TrackExceptionEvent.
+	 * @param player The player.
+	 * @param data The event data.
+	 * @returns {void}
+	 */
+	private TrackExceptionEvent(player: Player, data: EventInterface): void {
+		this.automata.emit('trackStuck', player, player.queue.current, data);
+		return player.stop();
+	}
+
+	/**
+	 * Handles the WebSocketClosedEvent.
+	 * @param player The player.
+	 * @param data The event data.
+	 * @returns {void}
+	 */
+	private WebSocketClosedEvent(player: Player, data: EventInterface): void {
+		if ([4015, 4009].includes(data.code))
+			this.send({
+				guild_id: data.guildId,
+				channel_id: player.voiceChannel,
+				self_mute: player.options.mute,
+				self_deaf: player.options.deaf,
+			});
+	
+		this.automata.emit('socketClose', player, data);
 	}
 }
 
