@@ -1,6 +1,11 @@
 import { AutomataOptions } from '../Manager';
 import { NodeOptions } from './Utils';
 
+/**
+ * Validates the options provided to the Node class.
+ * @param options The node options.
+ * @param secondaryOptions The manager's options.
+ */
 export function validateOptions(options: NodeOptions, secondaryOptions: AutomataOptions) {
 	if (!options) throw new TypeError('NodeOptions must not be empty.');
 
