@@ -257,7 +257,7 @@ interface NowPlayingMessage {
 	/** The boolean indicating if the message has been deleted or not. */
 	deleted?: boolean;
 	/** The delete function. */
-	delete: () => void;
+	delete: () => Promise<unknown>;
 }
 
 type Loop = 'NONE' | 'TRACK' | 'QUEUE';
