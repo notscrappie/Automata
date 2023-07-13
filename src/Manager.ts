@@ -16,6 +16,7 @@ export class Manager extends EventEmitter {
 	public players: Map<string, Player>;
 	/** The ID of the bot. */
 	public userId: string | null;
+	/** The boolean indicating if the manager has been initialized or not. */
 	private isActivated: boolean;
 	/**
 	 * The function used to send packets.
@@ -36,16 +37,17 @@ export class Manager extends EventEmitter {
 
 	/**
 	 * Initializes the manager.
-	 * @param {Client} client - The client object.
-	 * @returns {void}
+	 * @public
+	 * @param {client} client The client object.
+	 * @returns {this}
 	 */
-	public init(client: Client): void {
+	public init(client: Client): this {
 		this.userId = client.user.id;
 		for (const node of this._nodes) this.addNode(node);
 
 		this.send = (packet: VoicePacket) => {
 			const guild = client.guilds.cache.get(packet.d.guild_id);
-			guild.shard?.send(packet);
+			guild?.shard?.send(packet);
 		};
 
 		client.on('raw', (packet: VoicePacket) => {
@@ -53,22 +55,25 @@ export class Manager extends EventEmitter {
 		});
 
 		this.isActivated = true;
+		return this;
 	}
 
 	/**
 	 * Adds a new node to the node pool.
+	 * @public
 	 * @param {NodeOptions} options - The options for the new node.
 	 * @returns {Node} The newly added node.
 	 */
-	public addNode({ name, host, password, port }: NodeOptions): Node {
-		const node = new Node(this, { name, host, password, port }, this.options);
-		this.nodes.set(name, node);
+	public addNode(options: NodeOptions): Node {
+		const node = new Node(this, options, this.options);
+		this.nodes.set(options.name, node);
 		node.connect();
 		return node;
 	}
 
 	/**
 	 * Removes a node from the node pool.
+	 * @public
 	 * @param {string} identifier - The identifier of the node that will be removed.
 	 * @returns {void}
 	 */
@@ -81,6 +86,7 @@ export class Manager extends EventEmitter {
 
 	/**
 	 * Gets the least used nodes.
+	 * @public
 	 * @returns {Node[]} An array of least used nodes.
 	 */
 	public get leastUsedNodes(): Node[] {
@@ -107,6 +113,7 @@ export class Manager extends EventEmitter {
 
 	/**
 	 * Creates a new player instance for the specified guild and connects to the least used node based on the provided region or overall system load.
+	 * @public
 	 * @param {ConnectionOptions} options - The options for creating the player.
 	 * @returns {Player} The created player.
 	 * @throws {Error} If Automata was not initialized or there are no available nodes.
@@ -147,37 +154,56 @@ export class Manager extends EventEmitter {
 		if (!player) return;
 
 		const serverPacket = packet.d as ServerUpdatePacket;
-		const voicePacket = packet as VoicePacket;
+		const voicePacket = packet;
 
 		switch (packet.t) {
 		case 'VOICE_SERVER_UPDATE':
-			if (!serverPacket.endpoint) throw new Error('Automata · No session ID found.');
-
-			player.voice.endpoint = serverPacket.endpoint;
-			player.voice.token = serverPacket.token;
-
-			player.node.rest.updatePlayer({
-				guildId: player.guildId,
-				data: { voice: player.voice },
-			});
-
-			break;
+			return this.handleVServerUpdate(player, serverPacket);
 		case 'VOICE_STATE_UPDATE':
-			if (voicePacket.d.user_id !== this.userId) return;
-			if (!voicePacket.d.channel_id) return player.destroy();
-
-			if (player?.voiceChannel && voicePacket.d.channel_id && player?.voiceChannel !== voicePacket.d.channel_id)
-				player.voiceChannel = voicePacket.d.channel_id;
-
-			player.options.deaf = voicePacket.d.self_deaf ?? true;
-			player.options.mute = voicePacket.d.self_mute ?? false;
-			player.voice.sessionId = voicePacket.d.session_id ?? null;
-
-			if (player.isPaused) player.pause(false);
-			break;
+			return this.handleVStateUpdate(player, voicePacket)
 		default:
 			break;
 		}
+	}
+
+	/**
+	 * Handles voice server updates.
+	 * @private
+	 * @param player The player.
+	 * @param voicePacket The voice packet.
+	 * @returns {void}
+	 */
+	private handleVServerUpdate(player: Player, serverPacket: ServerUpdatePacket): void {
+		if (!serverPacket.endpoint) throw new Error('Automata · No session ID found.');
+
+		player.voice.endpoint = serverPacket.endpoint;
+		player.voice.token = serverPacket.token;
+
+		player.node.rest.updatePlayer({
+			guildId: player.guildId,
+			data: { voice: player.voice },
+		});
+	}
+
+	/**
+	 * Handles voice server updates.
+	 * @private
+	 * @param player The player.
+	 * @param voicePacket The voice packet.
+	 * @returns {void}
+	 */
+	private handleVStateUpdate(player: Player, voicePacket: VoicePacket): void {
+		if (voicePacket.d.user_id !== this.userId) return;
+		if (!voicePacket.d.channel_id) return player.destroy();
+
+		if (player?.voiceChannel && voicePacket.d.channel_id && player?.voiceChannel !== voicePacket.d.channel_id)
+			player.voiceChannel = voicePacket.d.channel_id;
+
+		player.options.deaf = voicePacket.d.self_deaf ?? true;
+		player.options.mute = voicePacket.d.self_mute ?? false;
+		player.voice.sessionId = voicePacket.d.session_id ?? null;
+
+		if (player.isPaused) player.pause(false);
 	}
 
 	/**
@@ -196,8 +222,8 @@ export class Manager extends EventEmitter {
 
 	/**
 	 * Resolves the provided query.
-	 * @param {ResolveOptions} options - The options for resolving the query.
-	 * @param {Node} node - The node to use for resolving. Defaults to the least used node.
+	 * @param {ResolveOptions} options The options for resolving the query.
+	 * @param {Node} node The node to use for resolving. Defaults to the least used node.
 	 * @returns {Promise<ResolveResult>} A promise that returns the loadType, mapped tracks and playlist info (when possible).
 	 * @throws {Error} If Automata has not been initialized or there are no available nodes.
 	 */
@@ -219,12 +245,10 @@ export class Manager extends EventEmitter {
 				break;
 			case 'playlist':
 				const playlistData = res.data as PlaylistData;
-				const playlist = playlistData.tracks.map((track) => new AutomataTrack(track, requester)) || [];
+				const playlist = playlistData.tracks.map((track) => new AutomataTrack(track, requester));
 				mappedTracks.push(...playlist);
 				break;
 		}
-
-		// const mappedTracks = 
 	
 		const finalResult: ResolveResult = {
 			loadType: res.loadType,
@@ -255,13 +279,17 @@ export interface PlaylistData {
 	tracks: TrackData[];
 }
 
+/** The final result built by the library. */
 interface ResolveResult {
+	/** The load type. */
 	loadType: LoadType;
+	/** The array of tracks. */
 	tracks: AutomataTrack[];
 	/** The playlist data. */
 	playlist: PlaylistData;
 }
 
+/** The result returned by the Lavalink node. */
 interface LavalinkResponse {
 	/** The load type. */
 	loadType: LoadType;
@@ -269,6 +297,7 @@ interface LavalinkResponse {
 	data: TrackData | PlaylistData;
 }
 
+/** The type of load type. */
 type LoadType =
 	| 'track'
 	| 'playlist'
@@ -276,22 +305,25 @@ type LoadType =
 	| 'empty'
 	| 'error'
 
+/** The type of search platform. */
 type SearchPlatform = 'spsearch' | 'dzsearch' | 'scsearch';
 
+/** The options for resolving a track. */
 interface ResolveOptions {
 	/** The query provided by the user. */
 	query: string;
 	/** The source that will be used to get the song from. */
-	source?: SearchPlatform | string;
+	source?: SearchPlatform;
 	/** The requester of the song. */
 	requester?: unknown;
 }
 
+/** The options for creating a new Manager. */
 export interface AutomataOptions {
 	/** The nodes the player will use. */
 	nodes: NodeOptions[];
 	/** The default platform used by the manager. Default platform is Deezer, by default. */
-	defaultPlatform?: SearchPlatform | string;
+	defaultPlatform?: SearchPlatform;
 	/** The time the manager will wait before trying to reconnect to a node. */
 	reconnectTimeout: number;
 	/** The amount of times the player will try to reconnect to a node. */
@@ -302,6 +334,7 @@ export interface AutomataOptions {
 	resumeTimeout: number;
 }
 
+/** The options for creating a new player. */
 export interface ConnectionOptions {
 	/** The ID of the guild where the player will be created. */
 	guildId?: string;
@@ -317,6 +350,7 @@ export interface ConnectionOptions {
 	region?: string;
 }
 
+/** The interface for all Automata events. */
 export interface AutomataEvents {
 	/**
 	 * @param topic
@@ -416,6 +450,7 @@ export declare interface Manager {
 	): this;
 }
 
+/** The voice packet returned by the VOICE_STATE_UPDATE event. */
 export interface VoicePacket {
 	/** The name of the event. */
 	t?: string;
@@ -435,6 +470,7 @@ export interface VoicePacket {
 	}
 }
 
+/** The server update packet returned by the VOICE_SERVER_UPDATE event. */
 export interface ServerUpdatePacket {
 	/** The token of the session. */
 	token: string;
@@ -444,14 +480,23 @@ export interface ServerUpdatePacket {
 	endpoint: string;
 }
 
+/** The discord.js client interface. */
 interface Client {
+	/** The user object. */
     user: {
+		/** The bot's ID. */
         id: string;
     };
+	/** The bot's guilds map. */
     guilds: {
+		/** The bot's guild cache. */
         cache: {
+			/** 
+			 * Retrieves the server from the cache based on the provided guild ID. 
+			 * @param guildId The server's ID.
+			 */
             get(guildId: string): {
-				shard?: {
+				shard: {
 					send(packet: VoicePacket): void;
 				} | undefined;
 			}
