@@ -1,6 +1,6 @@
 {
   "name": "@shadowrunners/automata",
-  "version": "2.3.1",
+  "version": "3.0.0",
   "description": "Automata is a fork of the Poru (by parasop) lavalink client developed and maintained by scrappie.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "build": "tsup",
-    "localdeploy": "npm run build && npm link"
+    "localdeploy": "tsup && npm link"
   },
   "tsup": {
     "dts": true,
@@ -47,13 +47,13 @@
     "ws": "^8.13.0"
   },
   "devDependencies": {
-    "@types/node": "^20.2.4",
-    "@types/ws": "^8.5.4",
-    "@typescript-eslint/eslint-plugin": "^5.59.7",
-    "@typescript-eslint/parser": "^5.59.7",
-    "eslint": "^8.41.0",
-    "tsup": "^6.7.0",
-    "typescript": "^5.0.4"
+    "@types/node": "^20.4.2",
+    "@types/ws": "^8.5.5",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.44.0",
+    "tsup": "^7.1.0",
+    "typescript": "^5.1.6"
   },
   "engines": {
     "node": ">=16.9.0"
