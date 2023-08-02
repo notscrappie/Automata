@@ -1,4 +1,4 @@
-import { AutomataOptions } from '../Manager';
+import { AutomataOptions } from '../Interfaces/ManagerInterfaces';
 import { NodeOptions } from './Utils';
 
 /**
