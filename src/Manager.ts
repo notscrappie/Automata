@@ -9,11 +9,10 @@ import {
 	PlaylistData,
 	Client,
 } from './Interfaces/ManagerInterfaces';
+import { TrackData } from './Interfaces/TrackInterfaces';
 import { NodeOptions, NodeStats } from './Utils/Utils';
-import { AutomataTrack, TrackData } from './Guild/Track';
-import { Node } from './Node/Node';
+import { AutomataTrack, Node, Player } from '../index';
 import { EventEmitter } from 'events';
-import { Player } from './Player/Player';
 
 /** The main hub for interacting with Lavalink via Automata. (shit taken from erela.js's repo, rip erela) */
 export class Manager extends EventEmitter {

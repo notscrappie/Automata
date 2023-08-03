@@ -1,6 +1,6 @@
 import { RequestMethod } from '../Utils/Utils';
-import { Node } from './Node';
 import { fetch } from 'undici';
+import { Node } from './Node';
 
 /** Handles the requests sent to the Lavalink REST API. */
 export class Rest {

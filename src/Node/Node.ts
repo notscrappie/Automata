@@ -1,9 +1,8 @@
 import { defaultOptions, NodeStats, EventInterface, NodeOptions } from '../Utils/Utils';
+import { AutomataOptions } from '../Interfaces/ManagerInterfaces';
 import { validateOptions } from '../Utils/ValidateOptions';
-import { Manager, AutomataOptions } from '../Manager';
+import { Manager, Rest, Player } from '../../index';
 import { WebSocket } from 'ws';
-import { Rest } from './Rest';
-import { Player } from '../Player/Player';
 
 /** Manages the connection between the client and the Lavalink server. */
 export class Node {
@@ -197,40 +196,40 @@ export class Node {
 		const player = this.automata.players.get(data.guildId);
 
 		switch (data.type) {
-			case 'TrackStartEvent':
-				this.TrackStartEvent(player);
-				break;
-			case 'TrackEndEvent':
-				this.TrackEndEvent(player);
-				break;
-			case 'TrackStuckEvent':
-				this.TrackStuckEvent(player, data);
-				break;
-			case 'TrackExceptionEvent':
-				this.TrackExceptionEvent(player, data);
-				break;
-			case 'WebSocketClosedEvent':
-				this.WebSocketClosedEvent(player, data);
-				break;
-			default:
-				break;
+		case 'TrackStartEvent':
+			this.TrackStartEvent(player);
+			break;
+		case 'TrackEndEvent':
+			this.TrackEndEvent(player);
+			break;
+		case 'TrackStuckEvent':
+			this.TrackStuckEvent(player, data);
+			break;
+		case 'TrackExceptionEvent':
+			this.TrackExceptionEvent(player, data);
+			break;
+		case 'WebSocketClosedEvent':
+			this.WebSocketClosedEvent(player, data);
+			break;
+		default:
+			break;
 		}
 	}
 
-	/** 
-	 * Handles the TrackStart event. 
+	/**
+	 * Handles the TrackStart event.
 	 * @param player The player.
 	 * @returns {void}
 	 */
 	private TrackStartEvent(player: Player): void {
 		if (player.loop === 'TRACK') return;
-		
+
 		player.isPlaying = true;
 		this.automata.emit('trackStart', player, player.queue.current);
 	}
 
-	/** 
-	 * Handles the TrackEnd event. 
+	/**
+	 * Handles the TrackEnd event.
 	 * @param player The player.
 	 * @returns {boolean | void}
 	*/
@@ -241,19 +240,20 @@ export class Node {
 			player.queue.unshift(player.queue.previous);
 			return player.play();
 		}
-		else if (player.queue.current && player.loop === 'QUEUE') 
+		else if (player.queue.current && player.loop === 'QUEUE')
 			player.queue.push(player.queue.previous);
 
 		if (player.nowPlayingMessage && !player.nowPlayingMessage.deleted)
-			player.nowPlayingMessage.delete().catch(() => { 
+			player.nowPlayingMessage.delete().catch(() => {
 				// This is here so DeepSource doesn't fucking complain again.
 			});
-				
+
 		if (player.queue.length === 0) {
 			player.isPlaying = false;
 			return this.automata.emit('queueEnd', player);
-		} else this.automata.emit('trackEnd', player, player.queue.current);
-		
+		}
+		else this.automata.emit('trackEnd', player, player.queue.current);
+
 		return player.play();
 	}
 
@@ -293,7 +293,7 @@ export class Node {
 				self_mute: player.options.mute,
 				self_deaf: player.options.deaf,
 			});
-	
+
 		this.automata.emit('socketClose', player, data);
 	}
 }
