@@ -1,4 +1,6 @@
-import { Manager, ConnectionOptions, IVoiceServer } from '../Manager';
+import { ConnectionOptions, IVoiceServer } from '../Interfaces/ManagerInterfaces';
+import { Loop, NowPlayingMessage } from '../Interfaces/PlayerInterfaces';
+import { Manager } from '../Manager';
 import { Filters } from './Filters';
 import { Node } from '../Node/Node';
 import Queue from '../Guild/Queue';
@@ -36,7 +38,7 @@ export class Player {
 	/** Indicates if the player is connected or not. */
 	public isConnected: boolean;
 	/** The current loop the player is on. */
-	public loop = 'NONE';
+	public loop: Loop = 'NONE';
 	/** The voice server information. */
 	public voice?: IVoiceServer = {
 		sessionId: null,
@@ -250,14 +252,3 @@ export class Player {
 		return this.automata.send({ op: 4, d: data });
 	}
 }
-
-interface NowPlayingMessage {
-	/** The ID of the channel. */
-	channelId: string;
-	/** The boolean indicating if the message has been deleted or not. */
-	deleted?: boolean;
-	/** The delete function. */
-	delete: () => Promise<unknown>;
-}
-
-type Loop = 'NONE' | 'TRACK' | 'QUEUE';
