@@ -193,6 +193,8 @@ export class Manager extends EventEmitter {
 			guildId: player.guildId,
 			data: { voice: player.voice },
 		});
+
+		return null;
 	}
 
 	/**
@@ -214,6 +216,8 @@ export class Manager extends EventEmitter {
 		player.voice.sessionId = voicePacket.d.session_id ?? null;
 
 		if (player.isPaused) player.pause(false);
+
+		return null;
 	}
 
 	/**
