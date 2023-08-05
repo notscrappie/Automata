@@ -1,4 +1,4 @@
-import { RequestMethod } from '../Utils/Utils';
+import { PlayOptions, RouteLike, RequestMethod } from '../Interfaces/RestInterfaces';
 import { fetch } from 'undici';
 import { Node } from './Node';
 
@@ -34,7 +34,7 @@ export class Rest {
 	}
 
 	/** Sends a PATCH request to update player related data. */
-	public async updatePlayer(options: playOptions): Promise<unknown> {
+	public async updatePlayer(options: PlayOptions): Promise<unknown> {
 		const request = await this.patch(`/v4/sessions/${this.sessionId}/players/${options.guildId}?noReplace=false`, options.data);
 		return request;
 	}
@@ -124,19 +124,3 @@ export class Rest {
 	}
 }
 
-interface playOptions {
-  guildId: string;
-  data: {
-    encodedTrack?: string;
-    identifier?: string;
-    startTime?: number;
-    endTime?: number;
-    volume?: number;
-    position?: number;
-    paused?: boolean;
-    filters?: object;
-    voice?: unknown;
-  };
-}
-
-type RouteLike = `/${string}`;
