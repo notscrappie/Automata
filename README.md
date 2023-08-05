@@ -19,6 +19,7 @@ npm install @shadowrunners/automata
 ```
 
 ## Example
+Below is a snippet of how to use the library. If you want a full bot example, check out Evelyn's music folder.
 
 ```javascript
 const { Client, GatewayIntentBits } = require("discord.js");
@@ -63,7 +64,7 @@ client.on("interactionCreate", async (interaction) => {
 
   const { options, member, guild, channelId } = interaction;
 
-  interaction.deferReply();
+  await interaction.deferReply();
 
   if (!member.voice.channel) return interaction.editReply({ embeds: [embed.setDescription('🔹 | You need to be in a voice channel to use this command.')] });
 
@@ -89,6 +90,8 @@ client.on("interactionCreate", async (interaction) => {
       player.queue.add(res.tracks[0]);
       if (!player.isPlaying && player.isConnected) player.play();
       interacton.editReply(`Enqueued track: \n \`${track.title}\``);
+    default:
+      break;
   }
 });
 
