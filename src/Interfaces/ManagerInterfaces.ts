@@ -3,7 +3,8 @@
  * Should make the file less cluttered.
  */
 
-import { TrackData, AutomataTrack, Player } from '../..';
+import { AutomataTrack, Player } from '../../index';
+import { TrackData } from './TrackInterfaces';
 import { NodeOptions } from '../Utils/Utils';
 
 /** The final result built by the library. */
