@@ -260,6 +260,8 @@ export class Manager extends EventEmitter {
 			playlist = data.tracks.map((newTrack) => new AutomataTrack(newTrack, requester));
 			mappedTracks.push(...playlist);
 			break;
+		default:
+			break;
 		}
 
 		const finalResult: ResolveResult = {
