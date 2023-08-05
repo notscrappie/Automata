@@ -1,6 +1,6 @@
-import { RequestMethod } from '../Utils/Utils';
-import { Node } from './Node';
+import { PlayOptions, RouteLike, RequestMethod } from '../Interfaces/RestInterfaces';
 import { fetch } from 'undici';
+import { Node } from './Node';
 
 /** Handles the requests sent to the Lavalink REST API. */
 export class Rest {
@@ -24,23 +24,24 @@ export class Rest {
 	 * @returns {string} Returns the session ID.
 	 */
 	public setSessionId(sessionId: string): string {
-		return this.sessionId = sessionId;
+		this.sessionId = sessionId;
+		return this.sessionId;
 	}
 
 	/** Retrieves all the players that are currently running on the node. */
 	public getAllPlayers(): Promise<unknown> {
-		return this.get(`/v3/sessions/${this.sessionId}/players`);
+		return this.get(`/v4/sessions/${this.sessionId}/players`);
 	}
 
 	/** Sends a PATCH request to update player related data. */
-	public async updatePlayer(options: playOptions): Promise<unknown> {
-		const request = await this.patch(`/v3/sessions/${this.sessionId}/players/${options.guildId}/?noReplace=false`, options.data);
+	public async updatePlayer(options: PlayOptions): Promise<unknown> {
+		const request = await this.patch(`/v4/sessions/${this.sessionId}/players/${options.guildId}?noReplace=false`, options.data);
 		return request;
 	}
 
 	/** Sends a DELETE request to the server to destroy the player. */
 	public async destroyPlayer(guildId: string) {
-		const request = await this.delete(`/v3/sessions/${this.sessionId}/players/${guildId}`);
+		const request = await this.delete(`/v4/sessions/${this.sessionId}/players/${guildId}`);
 		return request;
 	}
 
@@ -123,19 +124,3 @@ export class Rest {
 	}
 }
 
-interface playOptions {
-  guildId: string;
-  data: {
-    encodedTrack?: string;
-    identifier?: string;
-    startTime?: number;
-    endTime?: number;
-    volume?: number;
-    position?: number;
-    paused?: boolean;
-    filters?: object;
-    voice?: unknown;
-  };
-}
-
-type RouteLike = `/${string}`;

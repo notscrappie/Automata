@@ -1,14 +1,23 @@
 import { Band, bassBoostEqualizer, softEqualizer, tvEqualizer, trebleBassEqualizer, vaporwaveEqualizer } from '../Utils/EQPresets';
+import { KaraokeOptions, TimescaleOptions, VibratoOptions, RotationOptions } from '../Interfaces/FilterInterfaces';
 import { Player } from './Player';
 
+/** Supercharges the acoustics of the Player via sound filters. */
 export class Filters {
+	/** The player. */
 	public player: Player;
-	public volume = 1.0;
+	/** The volume of the player. */
+	public volume: number = null;
+	/** The EQ bands. */
 	public equalizer: Band[] = [];
-	public vibrato: vibratoOptions = null;
-	public rotation: rotationOptions = null;
-	public timescale: timescaleOptions = null;
-	public karaoke: karaokeOptions = null;
+	/** The vibrato options. */
+	public vibrato: VibratoOptions = null;
+	/** The rotation options. */
+	public rotation: RotationOptions = null;
+	/** The timescale options. */
+	public timescale: TimescaleOptions = null;
+	/** The karaoke options. */
+	public karaoke: KaraokeOptions = null;
 
 	constructor(player: Player) {
 		this.player = player;
@@ -102,8 +111,8 @@ export class Filters {
 	 * Applies the karaoke options specified by the filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	 */
-	public setKaraoke(karaoke?: karaokeOptions): this {
-		this.karaoke = karaoke || null;
+	public setKaraoke(karaoke?: KaraokeOptions): this {
+		this.karaoke = karaoke ?? null;
 		this.updateFilters();
 
 		return this;
@@ -113,8 +122,8 @@ export class Filters {
 	 * Applies the timescale options specified by the filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	 */
-	public setTimescale(timescale?: timescaleOptions): this {
-		this.timescale = timescale || null;
+	public setTimescale(timescale?: TimescaleOptions): this {
+		this.timescale = timescale ?? null;
 		this.updateFilters();
 
 		return this;
@@ -124,8 +133,8 @@ export class Filters {
 	 * Applies the vibrato options specified by the filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	 */
-	public setVibrato(vibrato?: vibratoOptions): this {
-		this.vibrato = vibrato || null;
+	public setVibrato(vibrato?: VibratoOptions): this {
+		this.vibrato = vibrato ?? null;
 		this.updateFilters();
 		return this;
 	}
@@ -134,8 +143,8 @@ export class Filters {
 	 * Applies the rotation options specified by the filter.
 	 * @returns The updated Filters instance applied to the currently playing track.
 	 */
-	public setRotation(rotation?: rotationOptions): this {
-		this.rotation = rotation || null;
+	public setRotation(rotation?: RotationOptions): this {
+		this.rotation = rotation ?? null;
 		this.updateFilters();
 
 		return this;
@@ -158,6 +167,8 @@ export class Filters {
 	public updateFilters(): this {
 		const { equalizer, karaoke, timescale, vibrato, rotation, volume } = this;
 
+		this.volume = this.player.volume;
+
 		this.player.node.rest.updatePlayer({
 			guildId: this.player.options.guildId,
 			data: {
@@ -171,38 +182,3 @@ export class Filters {
 	}
 }
 
-/** Options for adjusting the timescale of audio. */
-interface timescaleOptions {
-	/** The speed factor for the timescale. */
-	speed?: number;
-	/** The pitch factor for the timescale. */
-	pitch?: number;
-	/** The rate factor for the timescale. */
-	rate?: number;
-}
-
-/** Options for applying vibrato effect to audio. */
-interface vibratoOptions {
-	/** The frequency of the vibrato effect. */
-	frequency: number;
-	/** * The depth of the vibrato effect.*/
-	depth: number;
-}
-
-/** Options for applying rotation effect to audio. */
-interface rotationOptions {
-	/** The rotation speed in Hertz (Hz). */
-	rotationHz: number;
-}
-
-/** Options for applying karaoke effect to audio. */
-interface karaokeOptions {
-	/** The level of karaoke effect. */
-	level?: number;
-	/** The mono level of karaoke effect. */
-	monoLevel?: number;
-	/** The filter band of karaoke effect. */
-	filterBand?: number;
-	/** The filter width of karaoke effect. */
-	filterWidth?: number;
-}

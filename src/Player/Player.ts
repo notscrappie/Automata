@@ -1,4 +1,6 @@
-import { Manager, ConnectionOptions, IVoiceServer } from '../Manager';
+import { ConnectionOptions, IVoiceServer } from '../Interfaces/ManagerInterfaces';
+import { Loop, NowPlayingMessage } from '../Interfaces/PlayerInterfaces';
+import { Manager } from '../Manager';
 import { Filters } from './Filters';
 import { Node } from '../Node/Node';
 import Queue from '../Guild/Queue';
@@ -36,7 +38,7 @@ export class Player {
 	/** Indicates if the player is connected or not. */
 	public isConnected: boolean;
 	/** The current loop the player is on. */
-	public loop = 'NONE';
+	public loop: Loop = 'NONE';
 	/** The voice server information. */
 	public voice?: IVoiceServer = {
 		sessionId: null,
@@ -75,6 +77,19 @@ export class Player {
 
 		// Don't move this shit above the updatePlayer function or it fucks up the currently playing song. ;-;
 		Object.assign(this, { position: 0, isPlaying: true });
+	}
+
+	/**
+	 * Plays the previous track.
+	 */
+	public playPrevious(): void {
+		// Should return an error.
+		if (!this.queue.previous) throw new ReferenceError('There is no previous track. Probably because you either haven\'t queued anything yet or the currently playing song hasn\'t finished playing.');
+
+		if (this.queue.current) this.queue.unshift(this.queue.previous);
+		this.play();
+
+		this.queue.previous = null;
 	}
 
 	/**
@@ -153,7 +168,8 @@ export class Player {
 
 	/** Sets the now playing message. */
 	public setNowPlayingMessage(message: NowPlayingMessage): NowPlayingMessage {
-		return this.nowPlayingMessage = message;
+		this.nowPlayingMessage = message;
+		return message;
 	}
 
 	/** Sets the voice channel. */
@@ -164,6 +180,8 @@ export class Player {
 		this.voiceChannel = channel;
 
 		this.connect();
+
+		return channel;
 	}
 
 	/** Disconnects the player. */
@@ -234,14 +252,3 @@ export class Player {
 		return this.automata.send({ op: 4, d: data });
 	}
 }
-
-interface NowPlayingMessage {
-	/** The ID of the channel. */
-	channelId: string;
-	/** The boolean indicating if the message has been deleted or not. */
-	deleted?: boolean;
-	/** The delete function. */
-	delete: () => void;
-}
-
-type Loop = 'NONE' | 'TRACK' | 'QUEUE';

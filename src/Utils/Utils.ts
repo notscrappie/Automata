@@ -49,11 +49,3 @@ export interface EventInterface {
 	guildId: string;
 }
 
-// eslint-disable-next-line no-shadow
-export enum RequestMethod {
-	'Get' = 'GET',
-	'Delete' = 'DELETE',
-	'Post' = 'POST',
-	'Patch' = 'PATCH',
-	'Put' = 'PUT',
-}
