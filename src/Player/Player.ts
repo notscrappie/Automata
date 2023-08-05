@@ -136,6 +136,7 @@ export class Player {
 	public seek(position: number) {
 		if (isNaN(position)) throw new RangeError('Automata Error · Position must be a number.');
 
+		// Snippet taken from MagmaStream. Credits to them.
 		if (position < 0 || position > this.queue.current.length)
 			position = Math.max(Math.min(position, this.queue.current.length), 0);
 
