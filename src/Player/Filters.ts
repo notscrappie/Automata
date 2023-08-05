@@ -4,12 +4,19 @@ import { Player } from './Player';
 
 /** Supercharges the acoustics of the Player via sound filters. */
 export class Filters {
+	/** The player. */
 	public player: Player;
-	public volume = 1.0;
+	/** The volume of the player. */
+	public volume: number = null;
+	/** The EQ bands. */
 	public equalizer: Band[] = [];
+	/** The vibrato options. */
 	public vibrato: VibratoOptions = null;
+	/** The rotation options. */
 	public rotation: RotationOptions = null;
+	/** The timescale options. */
 	public timescale: TimescaleOptions = null;
+	/** The karaoke options. */
 	public karaoke: KaraokeOptions = null;
 
 	constructor(player: Player) {
@@ -159,6 +166,8 @@ export class Filters {
      */
 	public updateFilters(): this {
 		const { equalizer, karaoke, timescale, vibrato, rotation, volume } = this;
+
+		this.volume = this.player.volume;
 
 		this.player.node.rest.updatePlayer({
 			guildId: this.player.options.guildId,
