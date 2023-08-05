@@ -94,6 +94,7 @@ export class Node {
 		});
 
 		this.ws.close(1000, 'destroy');
+		this.ws?.removeAllListeners();
 		this.ws = null;
 
 		this.automata.nodes.delete(this.options.name);
