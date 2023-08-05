@@ -112,11 +112,11 @@ export class Manager extends EventEmitter {
 	 * @throws {Error} If there are no available nodes or the provided node identifier is not found.
 	 */
 	public getNode(identifier: string): Node[] | Node {
-		if (!this.nodes.size) throw new Error('There aren\'t any available nodes.');
+		if (!this.nodes.size) throw new Error('Automata Error · There aren\'t any available nodes.');
 		if (identifier === 'auto') return this.leastUsedNodes;
 
 		const node = this.nodes.get(identifier);
-		if (!node) throw new Error('Couldn\'t find the provided node identifier.');
+		if (!node) throw new Error('Automata Error · Couldn\'t find the provided node identifier.');
 		if (!node.isConnected) node.connect();
 		return node;
 	}
@@ -130,19 +130,19 @@ export class Manager extends EventEmitter {
 	 */
 	public create(options: ConnectionOptions): Player {
 		if (!this.isActivated) throw new Error(
-			'Automata was not initialized in your ready event. Please initiate it by using the <AutomataManager>.init function.',
+			'Automata Error · Automata was not initialized in your ready event. Please initiate it by using the <AutomataManager>.init function.',
 		);
 
 		let player = this.players.get(options.guildId);
 
 		if (!player) {
-			if (this.leastUsedNodes.length === 0) throw new Error('There aren\'t any nodes available.');
+			if (this.leastUsedNodes.length === 0) throw new Error('Automata Error · There aren\'t any nodes available.');
 
 			const foundNode = this.nodes.get(options.region
 				? this.leastUsedNodes.find((node) => node.regions.includes(options.region.toLowerCase()))?.options.name
 				: this.leastUsedNodes[0].options.name);
 
-			if (!foundNode) throw new Error('There aren\'t any nodes available.');
+			if (!foundNode) throw new Error('Automata Error · There aren\'t any nodes available.');
 
 			player = this.createPlayer(foundNode, options);
 		}
@@ -184,7 +184,7 @@ export class Manager extends EventEmitter {
 	 * @returns {void}
 	 */
 	private handleVServerUpdate(player: Player, serverPacket: ServerUpdatePacket): void {
-		if (!serverPacket.endpoint) throw new Error('Automata · No session ID found.');
+		if (!serverPacket.endpoint) throw new Error('Automata Error · No session ID found.');
 
 		player.voice.endpoint = serverPacket.endpoint;
 		player.voice.token = serverPacket.token;
@@ -238,8 +238,8 @@ export class Manager extends EventEmitter {
 	 * @throws {Error} If Automata has not been initialized or there are no available nodes.
 	 */
 	public async resolve({ query, source, requester }: ResolveOptions, node: Node = this.leastUsedNodes?.[0]): Promise<ResolveResult> {
-		if (!this.isActivated) throw new Error('Automata has not been initialized. Initiate Automata using the <Manager>.init() function in your ready.js.');
-		if (!node) throw Error('There are no available nodes.');
+		if (!this.isActivated) throw new Error('Automata Error · Automata has not been initialized. Initiate Automata using the <Manager>.init() function in your ready.js.');
+		if (!node) throw Error('Automata Error · There are no available nodes.');
 
 		const identifier = /^https?:\/\//.test(query) ? query : `${source ?? 'dzsearch'}:${query}`;
 		const res = await node.rest.get(`/v4/loadtracks?identifier=${encodeURIComponent(identifier)}`) as LavalinkResponse;
