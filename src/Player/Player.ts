@@ -79,12 +79,10 @@ export class Player {
 		Object.assign(this, { position: 0, isPlaying: true });
 	}
 
-	/**
-	 * Plays the previous track.
-	 */
+	/** Plays the previous track. */
 	public playPrevious(): void {
 		// Should return an error.
-		if (!this.queue.previous) throw new ReferenceError('There is no previous track. Probably because you either haven\'t queued anything yet or the currently playing song hasn\'t finished playing.');
+		if (!this.queue.previous) throw new ReferenceError('Automata Error · There is no previous track. Probably because you either haven\'t queued anything yet or the currently playing song hasn\'t finished playing.');
 
 		if (this.queue.current) this.queue.unshift(this.queue.previous);
 		this.play();
@@ -135,14 +133,19 @@ export class Player {
 	}
 
 	/** Seeks the track. */
-	public seekTo(position: number): void {
-		const newPosition = Math.min(position + this.position, this.queue.current.length);
-		this.node.rest.updatePlayer({ guildId: this.options.guildId, data: { position: newPosition } });
+	public seek(position: number) {
+		if (isNaN(position)) throw new RangeError('Automata Error · Position must be a number.');
+
+		// Snippet taken from MagmaStream. Credits to them.
+		if (position < 0 || position > this.queue.current.length)
+			position = Math.max(Math.min(position, this.queue.current.length), 0);
+
+		this.node.rest.updatePlayer({ guildId: this.options.guildId, data: { position: position } });
 	}
 
 	/** Sets the volume of the player. */
 	public setVolume(volume: number) {
-		if (volume < 0 || volume > 100) throw new RangeError('Volume must be between 1-100.');
+		if (volume < 0 || volume > 100) throw new RangeError('Automata Error · Volume must be between 1-100.');
 
 		this.node.rest.updatePlayer({ guildId: this.options.guildId, data: { volume } });
 
@@ -154,7 +157,7 @@ export class Player {
 		const validModes = new Set(['NONE', 'TRACK', 'QUEUE']);
 		if (!validModes.has(mode))
 			throw new TypeError(
-				'setLoop only accepts NONE, TRACK and QUEUE as arguments.',
+				'Automata Error · setLoop only accepts NONE, TRACK and QUEUE as arguments.',
 			);
 
 		this.loop = mode;
@@ -229,7 +232,7 @@ export class Player {
 	public moveNode(name: string): void {
 		const node = this.automata.nodes.get(name);
 		if (!node || node.options.name === this.node.options.name) return;
-		if (!node.isConnected) throw new Error('The node provided is not available.');
+		if (!node.isConnected) throw new Error('Automata Error · The node provided is not available.');
 
 		this.node.rest.destroyPlayer(this.options.guildId);
 		this.automata.players.delete(this.options.guildId);
@@ -241,7 +244,7 @@ export class Player {
 	/** Automatically moves the node. */
 	public AutoMoveNode(): void {
 		const [node] = this.automata.leastUsedNodes;
-		if (!node) throw new Error('There aren\'t any available nodes.');
+		if (!node) throw new Error('Automata Error · There aren\'t any available nodes.');
 		if (!this.automata.nodes.has(node.options.name)) return this.destroy();
 
 		return this.moveNode(node.options.name);

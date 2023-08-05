@@ -235,6 +235,7 @@ export class Node {
 	 * @returns {void}
 	*/
 	private TrackEndEvent(player: Player): void {
+		if (!player) return;
 		player.queue.previous = player.queue.current;
 
 		if (player.loop === 'TRACK') {
