@@ -232,9 +232,9 @@ export class Node {
 	/**
 	 * Handles the TrackEnd event.
 	 * @param player The player.
-	 * @returns {boolean | void}
+	 * @returns {void}
 	*/
-	private TrackEndEvent(player: Player): boolean | void {
+	private TrackEndEvent(player: Player): void {
 		player.queue.previous = player.queue.current;
 
 		if (player.loop === 'TRACK') {
@@ -251,7 +251,7 @@ export class Node {
 
 		if (player.queue.length === 0) {
 			player.isPlaying = false;
-			return this.automata.emit('queueEnd', player);
+			this.automata.emit('queueEnd', player);
 		}
 		else this.automata.emit('trackEnd', player, player.queue.current);
 
