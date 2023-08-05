@@ -6,13 +6,13 @@
   <img src="https://deepsource.io/gh/shadowrunners/Automata.svg/?label=active+issues&show_trend=true&token=lWLKFmoDqIp0GpfoY2sCAJS2"/>
 </div>
 
-# What's this and how is it different from Poru?
+## What's this and how is it different from Poru?
 
 Automata is a fork of the Poru lavalink client developed and maintained by [parasop](https://github.com/parasop). This fork contains tweaks to certain functions and modified functionality such as the de-coupling from YouTube entirely with this fork only being able to play audio from platforms such as Deezer, SoundCloud, Spotify etc and some performance related optimizations.
 
 The old v1 branch is based on Poru 3.7.2. This branch is based on Poru v4 with full support for Lavalink's new REST API.
 
-# Installation (if you're crazy enough)
+## Installation
 
 ```
 npm install @shadowrunners/automata
@@ -41,8 +41,8 @@ client.manager = new Manager(
     password: "iloveyou3000",
   },
   {
-    reconnectTime: 0,
-    resumeKey: "MyPlayers",
+    reconnectTime: 2000,
+    resumeStatus: true,
     resumeTimeout: 60,
     defaultPlatform: "dzsearch",
   }
@@ -78,14 +78,14 @@ client.on("interactionCreate", async (interaction) => {
   });
 
   switch (res.loadType) {
-    case 'LOAD_FAILED': return interaction.editReply({ content: "Failed to load track." });
-    case 'NO_MATCHES': return interaction.editReply({ content: "No results found." });
-    case 'PLAYLIST_LOADED': {
+    case 'error': return interaction.editReply({ content: "Failed to load track." });
+    case 'empty': return interaction.editReply({ content: "No results found." });
+    case 'playlist': {
       for (const track of res.tracks) player.queue.add(track);
 
-      interaction.editReply({ content: `${res.playlistInfo.name} has been loaded with ${res.tracks.length}` });
-    case 'SEARCH_RESULT':
-    case 'TRACK_LOADED':
+      interaction.editReply({ content: `${res.playlist.name} has been loaded with ${res.playlsit.tracks.length}` });
+    case 'search':
+    case 'track':
       player.queue.add(res.tracks[0]);
       if (!player.isPlaying && player.isConnected) player.play();
       interacton.editReply(`Enqueued track: \n \`${track.title}\``);
@@ -94,6 +94,9 @@ client.on("interactionCreate", async (interaction) => {
 
 client.login('wee woo discord token goes here');
 ```
+
+## Documentation
+You can check out the documentation for this fork [here](https://automata.js.org).
 
 ## Credits
 
