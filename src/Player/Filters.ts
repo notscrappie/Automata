@@ -2,6 +2,7 @@ import { Band, bassBoostEqualizer, softEqualizer, tvEqualizer, trebleBassEqualiz
 import { KaraokeOptions, TimescaleOptions, VibratoOptions, RotationOptions } from '../Interfaces/FilterInterfaces';
 import { Player } from './Player';
 
+/** Supercharges the acoustics of the Player via sound filters. */
 export class Filters {
 	public player: Player;
 	public volume = 1.0;
