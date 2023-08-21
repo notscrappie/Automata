@@ -7,7 +7,7 @@ export interface TrackDataInfo {
 	/** The URL of the song's artwork. */
 	artworkUrl?: string;
 	/** The ISRC of the track. */
-	irsc?: string;
+	isrc?: string;
 	/** The author of the track. */
 	author?: string;
 	/** The title of the track. */
@@ -28,6 +28,8 @@ export interface TrackDataInfo {
 
 /** Represents the data of a track. */
 export interface TrackData {
+	/** The Base64 encoded track. */
 	encoded?: string;
-	info?: TrackDataInfo
+	/** The track's information. */
+	info?: TrackDataInfo;
 }

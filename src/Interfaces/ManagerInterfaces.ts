@@ -27,8 +27,20 @@ export interface LavalinkResponse {
 
 /** Represents the data of a playlist. */
 export interface PlaylistData {
-	/** The name of the playlist. */
-	name?: string;
+	/** The info about the playlist. **/
+	info: {
+		/** The playlist's name. */
+		name: string;
+	};
+	/** The playlist information provided by the plugin. */
+	pluginInfo: {
+		/** The playlist's URL. */
+		url: string;
+		/** The playlist's artwork URL. */
+		artworkUrl: string;
+		/** The playlist's author. */
+		author: string;
+	}
 	/** The array of tracks. */
 	tracks: TrackData[];
 }
