@@ -9,7 +9,7 @@ export class AutomataTrack {
 	/** The URL of the song's artwork. */
 	artworkUrl?: string;
 	/** The ISRC of the track. */
-	irsc?: string;
+	isrc?: string;
 	/** The author of the track. */
 	author?: string;
 	/** The title of the track. */
@@ -40,7 +40,7 @@ export class AutomataTrack {
 				this.track = firstTrack.track;
 				this.identifier = firstTrack.identifier;
 				this.artworkUrl = firstTrack.artworkUrl;
-				this.irsc = firstTrack.irsc;
+				this.isrc = firstTrack.isrc;
 				this.author = firstTrack.author;
 				this.title = firstTrack.title;
 				this.length = firstTrack.length;
@@ -51,7 +51,6 @@ export class AutomataTrack {
 			}
 		}
 		else {
-			const trackData = data;
 			const {
 				encoded,
 				info: {
@@ -65,7 +64,7 @@ export class AutomataTrack {
 					sourceName,
 					artworkUrl,
 				},
-			} = trackData;
+			} = data;
 
 			this.track = encoded;
 			this.identifier = identifier;
