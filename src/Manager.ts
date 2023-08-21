@@ -1,13 +1,13 @@
 import {
 	AutomataOptions,
-	VoicePacket,
+	Client,
 	ConnectionOptions,
-	ServerUpdatePacket,
-	ResolveOptions,
-	ResolveResult,
 	LavalinkResponse,
 	PlaylistData,
-	Client,
+	ResolveOptions,
+	ResolveResult,
+	ServerUpdatePacket,
+	VoicePacket,
 } from './Interfaces/ManagerInterfaces';
 import { TrackData } from './Interfaces/TrackInterfaces';
 import { NodeOptions, NodeStats } from './Utils/Utils';
@@ -106,7 +106,7 @@ export class Manager extends EventEmitter {
 	}
 
 	/**
-	 * Retrives a node.
+	 * Retrieves a node.
 	 * @param {string} identifier - The identifier of the node to retrieve. Defaults to 'auto'.
 	 * @returns {Node[] | Node} The retrieved node(s).
 	 * @throws {Error} If there are no available nodes or the provided node identifier is not found.
@@ -164,13 +164,11 @@ export class Manager extends EventEmitter {
 		if (!player) return;
 
 		const serverPacket = packet.d as ServerUpdatePacket;
-		const voicePacket = packet;
-
 		switch (packet.t) {
 		case 'VOICE_SERVER_UPDATE':
 			return this.handleVServerUpdate(player, serverPacket);
 		case 'VOICE_STATE_UPDATE':
-			return this.handleVStateUpdate(player, voicePacket);
+			return this.handleVStateUpdate(player, packet);
 		default:
 			break;
 		}
@@ -180,7 +178,7 @@ export class Manager extends EventEmitter {
 	 * Handles voice server updates.
 	 * @private
 	 * @param player The player.
-	 * @param voicePacket The voice packet.
+	 * @param serverPacket The voice packet.
 	 * @returns {void}
 	 */
 	private handleVServerUpdate(player: Player, serverPacket: ServerUpdatePacket): void {
@@ -264,13 +262,11 @@ export class Manager extends EventEmitter {
 			break;
 		}
 
-		const finalResult: ResolveResult = {
+		return {
 			loadType: res.loadType,
 			tracks: mappedTracks,
 			playlist: res.loadType === 'playlist' ? res.data as PlaylistData : undefined,
 		};
-
-		return finalResult;
 	}
 
 	/**
