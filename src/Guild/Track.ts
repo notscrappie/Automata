@@ -51,6 +51,11 @@ export class AutomataTrack {
 			}
 		}
 		else {
+			let trackData: TrackData;
+
+			if (Array.isArray(data)) trackData = data[0];
+			else trackData = data;
+
 			const {
 				encoded,
 				info: {
@@ -64,7 +69,7 @@ export class AutomataTrack {
 					sourceName,
 					artworkUrl,
 				},
-			} = data;
+			} = trackData;
 
 			this.track = encoded;
 			this.identifier = identifier;
