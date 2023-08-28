@@ -248,6 +248,7 @@ export class Manager extends EventEmitter {
 		let playlist: AutomataTrack[];
 
 		switch (res.loadType) {
+		case 'search':
 		case 'track':
 			data = res.data as TrackData;
 			track = new AutomataTrack(data, requester);
