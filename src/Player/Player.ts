@@ -75,7 +75,7 @@ export class Player {
 			},
 		});
 
-		// Don't move this shit above the updatePlayer function or it fucks up the currently playing song. ;-;
+		// Don't move this shit above the updatePlayer function, or it fucks up the currently playing song. ;-;
 		Object.assign(this, { position: 0, isPlaying: true });
 	}
 
@@ -90,10 +90,7 @@ export class Player {
 		this.queue.previous = null;
 	}
 
-	/**
-	 * Connects to the user's voice channel.
-	 * @param options - The connection options.
-	 */
+	/** Connects to the user's voice channel. */
 	public connect(): this {
 		this.send({
 			guild_id: this.guildId,
