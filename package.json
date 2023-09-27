@@ -44,7 +44,7 @@
   "homepage": "https://github.com/shadowrunners/Automata#readme",
   "dependencies": {
     "undici": "^5.23.0",
-    "ws": "^8.13.0"
+    "ws": "^8.14.0"
   },
   "devDependencies": {
     "@types/node": "^20.5.7",
