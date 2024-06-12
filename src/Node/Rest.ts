@@ -1,126 +1,157 @@
-import { PlayOptions, RouteLike, RequestMethod } from '../Interfaces/RestInterfaces';
-import { fetch } from 'undici';
-import { Node } from './Node';
+import { ErrorResponses, Node } from "./Node";
+import { Poru } from "../Poru";
+import { Track, trackData } from "../guild/Track";
+import { FiltersOptions } from '../Player/Filters';
+import { IVoiceServer } from "../Player/Connection";
 
-/** Handles the requests sent to the Lavalink REST API. */
-export class Rest {
-	/** The ID of the current session. */
-	private sessionId: string;
-	/** The password for the Node. */
-	private readonly password: string;
-	/** The URL of the Node. */
-	private readonly url: string;
+export type PartialNull<T> = { [P in keyof T]: T[P] | null };
 
-	constructor(node: Node) {
-		this.url = `http${node.options.secure ? 's' : ''}://${node.options.host}:${
-			node.options.port
-		}`;
-		this.sessionId = node.sessionId;
-		this.password = node.options.password;
-	}
+export interface playOptions {
+    guildId: string;
+    data: {
+        track?: any;
+        identifier?: string;
+        startTime?: number;
+        endTime?: number;
+        volume?: number;
+        position?: number;
+        paused?: boolean;
+        filters?: Partial<FiltersOptions>;
+        voice?: IVoiceServer | PartialNull<IVoiceServer> | null;
+    };
+};
 
-	/**
-	 * Sets the session ID.
-	 * @returns {string} Returns the session ID.
-	 */
-	public setSessionId(sessionId: string): string {
-		this.sessionId = sessionId;
-		return this.sessionId;
-	}
 
-	/** Retrieves all the players that are currently running on the node. */
-	public getAllPlayers(): Promise<unknown> {
-		return this.get(`/v4/sessions/${this.sessionId}/players`);
-	}
+export interface PlayerObjectFromAPI {
+    guildId: string;
+    track: trackData;
+    volume: number;
+    paused: boolean;
+    state: PlayerState;
+    voice: IVoiceServer;
+    filters: FiltersOptions;
+};
 
-	/** Sends a PATCH request to update player related data. */
-	public async updatePlayer(options: PlayOptions): Promise<unknown> {
-		const request = await this.patch(`/v4/sessions/${this.sessionId}/players/${options.guildId}?noReplace=false`, options.data);
-		return request;
-	}
+export interface PlayerState {
+    time: number;
+    position: number;
+    connected: boolean;
+    ping: number;
+};
 
-	/** Sends a DELETE request to the server to destroy the player. */
-	public async destroyPlayer(guildId: string) {
-		const request = await this.delete(`/v4/sessions/${this.sessionId}/players/${guildId}`);
-		return request;
-	}
+export type RouteLike = `/${string}`;
+export type HeadersInit = string[][] | Record<string, string | ReadonlyArray<string>> | Headers;
 
-	/* Sends a GET request to the specified endpoint and returns the response data. */
-	public async get(path: RouteLike): Promise<unknown> {
-		try {
-			const req = await fetch(this.url + path, {
-				method: RequestMethod.Get,
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: this.password,
-				},
-			});
-
-			const json = await req.json();
-			return json;
-		}
-		catch (e) {
-			return null;
-		}
-	}
-
-	/* Sends a PATCH request to the specified endpoint and returns the response data. */
-	public async patch(endpoint: RouteLike, body: unknown): Promise<unknown> {
-		try {
-			const req = await fetch(this.url + endpoint, {
-				method: RequestMethod.Patch,
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: this.password,
-				},
-				body: JSON.stringify(body),
-			});
-
-			const json = await req.json();
-			return json;
-		}
-		catch (e) {
-			return null;
-		}
-	}
-
-	/* Sends a POST request to the specified endpoint and returns the response data. */
-	public async post(endpoint: RouteLike, body: unknown): Promise<unknown> {
-		try {
-			const req = await fetch(this.url + endpoint, {
-				method: RequestMethod.Post,
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: this.password,
-				},
-				body: JSON.stringify(body),
-			});
-
-			const json = await req.json();
-			return json;
-		}
-		catch (e) {
-			return null;
-		}
-	}
-
-	/* Sends a DELETE request to the specified endpoint and returns the response data. */
-	public async delete(endpoint: RouteLike): Promise<unknown> {
-		try {
-			const req = await fetch(this.url + endpoint, {
-				method: RequestMethod.Delete,
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: this.password,
-				},
-			});
-
-			const json = await req.json();
-			return json;
-		}
-		catch (e) {
-			return null;
-		}
-	}
+export enum RequestMethod {
+    "Get" = "GET",
+    "Delete" = "DELETE",
+    "Post" = "POST",
+    "Patch" = "PATCH",
+    "Put" = "PUT",
 }
 
+export class Rest {
+    private sessionId: string | null;
+    private password: string;
+    public url: string;
+    public poru: Poru;
+    public isNodeLink: boolean;
+
+    constructor(poru: Poru, node: Node) {
+        this.poru = poru;
+        this.url = `http${node.secure ? "s" : ""}://${node.options.host}:${node.options.port}`;
+        this.sessionId = node.sessionId;
+        this.password = node.password;
+        this.isNodeLink = node.isNodeLink;
+    }
+
+    public setSessionId(sessionId: string) {
+        this.sessionId = sessionId;
+    };
+
+    /**
+     * Gets all players in this specific session
+     * @returns Returns a list of players in this specific session.
+     */
+    public async getAllPlayers(): Promise<PlayerObjectFromAPI[] | ErrorResponses | null> {
+        return await this.get(`/v4/sessions/${this.sessionId}/players`); // This will never be a string!
+    }
+
+    /**
+     * Updates a specific player in this session in the specified guild
+     * @param options 
+     * @returns A player object from the API
+     */
+    public async updatePlayer(options: playOptions): Promise<PlayerObjectFromAPI | ErrorResponses | null> {
+        return await this.patch(`/v4/sessions/${this.sessionId}/players/${options.guildId}?noReplace=false`, options.data);
+    }
+
+    public async destroyPlayer(guildId: string): Promise<null | ErrorResponses> {
+        return await this.delete(`/v4/sessions/${this.sessionId}/players/${guildId}`);
+    }
+
+    public async get<T = unknown>(path: RouteLike): Promise<T | null> {
+        try {
+            const req = await globalThis.fetch(this.url + path, {
+                method: RequestMethod.Get,
+                headers: this.headers
+            });
+
+            return req.headers.get("content-type") === "application/json" ? await req.json() as T : await req.text() as T;
+        } catch (e) {
+            return null;
+        }
+    };
+
+    public async patch<T = unknown | null>(endpoint: RouteLike, body: any): Promise<T | null> {
+        try {
+            const req = await globalThis.fetch(this.url + endpoint, {
+                method: RequestMethod.Patch,
+                headers: this.headers,
+                body: JSON.stringify(body),
+            });
+
+            return await req.json() as T;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    public async post<T = unknown>(endpoint: RouteLike, body: any): Promise<T | null> {
+        try {
+            const req = await globalThis.fetch(this.url + endpoint, {
+                method: RequestMethod.Post,
+                headers: this.headers,
+                body: JSON.stringify(body),
+            });
+
+            return await req.json() as T;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    public async delete<T = unknown>(endpoint: RouteLike): Promise<T | null> {
+        try {
+            const req = await globalThis.fetch(this.url + endpoint, {
+                method: RequestMethod.Delete,
+                headers: this.headers
+            });
+
+            return await req.json() as T;
+        } catch (e) {
+            return null;
+        }
+    };
+
+    protected get headers(): HeadersInit {
+        const headers: HeadersInit = {
+            "Content-Type": "application/json",
+            Authorization: this.password,
+        };
+
+        if (this.isNodeLink) headers["Accept-Encoding"] = "br, gzip, deflate";
+
+        return headers;
+    }
+}

@@ -1,106 +1,176 @@
 <p align="center">
-  <img src="https://i.imgur.com/GTPBh5x.png" />
+  <img src="https://raw.githubusercontent.com/parasop/poru/v5/assets/poru.png" alt="Poru Logo" height="340" width="340"/>
 </p>
 
-<div align="center"> 
-  <img src="https://deepsource.io/gh/shadowrunners/Automata.svg/?label=active+issues&show_trend=true&token=lWLKFmoDqIp0GpfoY2sCAJS2"/>
-</div>
+<p align="center">
+  <a href="https://discord.gg/Zmmc47Nrh8">
+    <img src="https://img.shields.io/discord/567705326774779944?style=flat-square" alt="Discord"/>
+  </a>
+  <a href="https://www.npmjs.com/package/poru">
+    <img src="https://img.shields.io/npm/v/poru?style=flat-square" alt="npm"/>
+  </a>
+  <img src="https://img.shields.io/github/stars/parasop/poru?style=flat-square" alt="GitHub Stars"/>
+  <img src="https://img.shields.io/github/issues-raw/parasop/poru?style=flat-square" alt="GitHub issues"/>
+  <img src="https://img.shields.io/snyk/vulnerabilities/npm/poru?style=flat-square" alt="Snyk Vulnerabilities for npm package"/>
+  <img src="https://img.shields.io/npm/l/poru?style=flat-square" alt="NPM"/>
+</p>
 
-## What's this and how is it different from Poru?
+<p align="center">
+  note: this version supports only Lavalink v4 or above
+</p>
 
-Automata is a fork of the Poru lavalink client developed and maintained by [parasop](https://github.com/parasop). This fork contains tweaks to certain functions and modified functionality such as the de-coupling from YouTube entirely with this fork only being able to play audio from platforms such as Deezer, SoundCloud, Spotify etc and some performance related optimizations.
+<p align="center">
+  <a href="https://nodei.co/npm/poru/">
+    <img src="https://nodei.co/npm/poru.png?downloads=true&downloadRank=true&stars=true" alt="Poru NPM Package"/>
+    </a>
+</p>
 
-The old v1 branch is based on Poru 3.7.2. This branch is based on Poru v4 with full support for Lavalink's new REST API.
+## Table of contents
+
+- [Documentation](https://poru.js.org)
+- [Installation](#installation)
+- [About](#about)
+- [Implementation Repo](#implementation-repo)
+- [Basic Usage](#example-usage-basic-bot)
+- [Plugins List](#plugins-list)
+- [Help & Support](#need-help)
+- [Example Bot](https://github.com/parasop/poru-example)
 
 ## Installation
 
-```
-npm install @shadowrunners/automata
+```bash
+# Using npm
+npm install poru
+
+# Using yarn
+yarn add poru
 ```
 
-## Example
-Below is a snippet of how to use the library. If you want a full bot example, check out Evelyn's music folder.
+## About
+
+To use, you need a configured [Lavalink](https://github.com/lavalink-devs/Lavalink) instance.
+
+- Stable client
+- Support TypeScript
+- 100% Compatible with Lavalink
+- Object-oriented
+- 100% Customizable
+- Easy to setup
+- Inbuilt Queue System
+- Inbuilt support for Spotify, Apple Music, and Deezer
+
+## Implementation Repo:
+
+Note: Send PR to add your repo here
+
+| URL | Features | Additional Information |
+|-----|----------|------------------------|
+| [Poru Music](https://github.com/parasop/poru-example) | Basic example | Works with the latest Discord.js version |
+| [The world machine](https://github.com/Reishimanfr/TWM-bot) | See GitHub repo for the full list | - |
+| [Lunox](https://github.com/adh319/Lunox) | Look over the repo for the full list of features | Simply powerful Discord Music Bot |
+
+## Example usage basic bot
 
 ```javascript
 const { Client, GatewayIntentBits } = require("discord.js");
-const { Manager } = require("@shadowrunners/automata");
+const { Poru } = require("poru");
+
+const nodes = [
+    {
+        name: "local-node",
+        host: "localhost",
+        port: 2333,
+        password: "youshallnotpass",
+    },
+];
+
+const PoruOptions = {
+    library: "discord.js",
+    defaultPlatform: "scsearch",
+};
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.GuildVoiceStates,
-  ],
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.MessageContent,
+    ],
 });
 
-client.manager = new Manager(
-  client,
-  {
-    name: "main_node",
-    host: "localhost",
-    port: 8080,
-    password: "iloveyou3000",
-  },
-  {
-    reconnectTime: 2000,
-    resumeStatus: true,
-    resumeTimeout: 60,
-    defaultPlatform: "dzsearch",
-  }
-);
+client.poru = new Poru(client, nodes, PoruOptions);
 
-client.manager.on("trackStart", (player, track) => {
-  const channel = client.channels.cache.get(player.textChannel);
-  return channel.send(`Now playing \`${track.title}\``);
+client.poru.on("trackStart", (player, track) => {
+    const channel = client.channels.cache.get(player.textChannel);
+    return channel.send(`Now playing \`${track.info.title}\``);
 });
 
 client.on("ready", () => {
-  console.log("Ready!");
-  client.manager.init(client);
+    console.log("Ready!");
+    client.poru.init(client);
 });
 
 client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
+    if (!interaction.isChatInputCommand()) return;
+    if (!interaction.member.voice.channel) {
+        return interaction.reply({
+            content: `Please connect with a voice channel `,
+            ephemeral: true,
+        });
+    }
 
-  const { options, member, guild, channelId } = interaction;
+    const track = interaction.options.getString("track");
 
-  await interaction.deferReply();
+    const res = await client.poru.resolve({ query: track, source: "scsearch", requester: interaction.member });
 
-  if (!member.voice.channel) return interaction.editReply({ embeds: [embed.setDescription('🔹 | You need to be in a voice channel to use this command.')] });
+    if (res.loadType === "error") {
+        return interaction.reply("Failed to load track.");
+    } else if (res.loadType === "empty") {
+        return interaction.reply("No source found!");
+    }
 
-  const query = options.getString("query");
-  const res = await client.manager.resolve({ query, requester: member });
+    // Create connection with Discord voice channel
+    const player = client.poru.createConnection({
+        guildId: interaction.guild.id,
+        voiceChannel: interaction.member.voice.channelId,
+        textChannel: interaction.channel.id,
+        deaf: true,
+    });
 
-  const player = client.manager.create({
-    guildId: guild.id,
-    voiceChannel: member.voice.channelId,
-    textChannel: channelId,
-    deaf: true,
-  });
+    if (res.loadType === "playlist") {
+        for (const track of res.tracks) {
+            track.info.requester = interaction.user;
+            player.queue.add(track);
+        }
 
-  switch (res.loadType) {
-    case 'error': return interaction.editReply({ content: "Failed to load track." });
-    case 'empty': return interaction.editReply({ content: "No results found." });
-    case 'playlist': {
-      for (const track of res.tracks) player.queue.add(track);
+        interaction.reply(
+            `${res.playlistInfo.name} has been loaded with ${res.tracks.length}`
+        );
+    } else {
+        const track = res.tracks[0];
+        track.info.requester = interaction.user;
+        player.queue.add(track);
+        interaction.reply(`Queued Track \n \`${track.info.title}\``)
+    }
 
-      interaction.editReply({ content: `${res.playlist.name} has been loaded with ${res.playlsit.tracks.length}` });
-    case 'search':
-    case 'track':
-      player.queue.add(res.tracks[0]);
-      if (!player.isPlaying && player.isConnected) player.play();
-      interacton.editReply(`Enqueued track: \n \`${track.title}\``);
-    default:
-      break;
-  }
+    if (!player.isPlaying && player.isConnected) player.play();
 });
 
-client.login('wee woo discord token goes here');
+client.login("TOKEN");
 ```
 
-## Documentation
-You can check out the documentation for this fork [here](https://automata.js.org).
+## Plugins list:
 
-## Credits
+Note: Open a PR to add your plugin here
 
-Full credit goes to [parasop](https://github.com/parasop) for creating Poru.
+| Name | Link | Additional Description |
+|------|------|------------------------|
+| Poru Spotify | [poru-spotify](https://github.com/parasop/poru-spotify) | Plugin for integrating Spotify with Poru |
+| Poru Deezer | [poru-deezer](https://github.com/parasop/poru-deezer) | Plugin for integrating Deezer with Poru |
+| Poru Apple Music | [poru-applemusic](https://github.com/parasop/poru-applemusic) | Plugin for integrating Apple Music with Poru |
+
+## Need Help?
+
+Feel free to join our [Discord server](https://discord.gg/Zmmc47Nrh8). Give us suggestions and advice about errors and new features.
+
+With ❤️ by [Paras](https://github.com/parasop).
